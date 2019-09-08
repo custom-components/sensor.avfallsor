@@ -1,0 +1,19 @@
+{
+    "config": {
+        "title": "Avfallsor",
+        "step": {
+            "user": {
+                "title": "Sensor",
+                "description": "Setup a avfallsor sensor",
+                "data": {
+                    "kommune": "kommune",
+                    "streetid": "streetid"
+                    
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Name already exists"
+        }
+    }
+}

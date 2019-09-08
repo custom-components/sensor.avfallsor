@@ -1,0 +1,9 @@
+{
+  "domain": "avfallsor",
+  "name": "avfallsor",
+  "documentation": "https://github.com/Hellowlol/sensor.avfallsor",
+  "dependencies": [],
+  "config_flow": true,
+  "codeowners": ["@hellowlol"],
+  "requirements": ["beautifulsoup4"]
+}
