@@ -160,6 +160,10 @@ def parse_tomme_kalender(text):
                     exceptions["bio"].append((to_dt(old), to_dt(new)))
                 elif "Rest" in item["src"]:
                     exceptions["rest"].append((to_dt(old), to_dt(new)))
+                elif "Grønn" in item["src"]:
+                    exceptions["paper"].append((to_dt(old), to_dt(new)))
+                elif "glass" in item["src"]:
+                    exceptions["metal"].append((to_dt(old), to_dt(new)))
 
     # Lets get all the days for the year.
     today = date.today()
@@ -172,17 +176,13 @@ def parse_tomme_kalender(text):
 
     # replace any exception from the normals tommedays
     # this usually because of holydays etc.
-    for item in tomme_days["rest"]:
-        for i in exceptions["rest"]:
-            if i and i[0] == item:
-                tomme_days["rest"].remove(item)
-                tomme_days["rest"].append(i[1])
-
-    for item in tomme_days["bio"]:
-        for i in exceptions["bio"]:
-            if i and i[0] == item:
-                tomme_days["bio"].remove(item)
-                tomme_days["bio"].append(i[1])
+    if len(exceptions):
+        for k, v in exceptions.items():
+            for i in v:
+                for item in tomme_days.get(k, []):
+                    if i and i[0] == item:
+                        tomme_days[k].remove(item)
+                        tomme_days[k].append(i[1])
 
     return tomme_days
 
