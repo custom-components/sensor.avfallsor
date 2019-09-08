@@ -245,18 +245,17 @@ class AvfallSor(Entity):
     def icon(self):
         """Shows the correct icon for container."""
         # todo fix icons.
-        # "mdi:recycle"
         if self._garbage_type == "paper":
-            return "green"
+            return "mdi:recycle"
 
         elif self._garbage_type == "bio":
-            return "brown"
+            return "mdi:recycle"
 
         elif self._garbage_type == "general_waste":
-            return "grey"
+            return "mdi:recycle"
 
         elif self._garbage_type == "metal":
-            return "reddish"  # what color is the box??
+            return "mdi:recycle"
 
     @property
     def name(self):
