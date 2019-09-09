@@ -13,46 +13,18 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity import Entity
 from homeassistant.const import ATTR_ATTRIBUTION
 
-from . import DOMAIN, garbage_types
+from . import DOMAIN, garbage_types, nor_days, nor_months
+from .utils import find_address, find_address_from_lat_lon, to_dt, find_next_garbage_pickup
 
 
 _LOGGER = logging.getLogger(__name__)
 
-nor_months = {
-    "jan": "jan",
-    "feb": "feb",
-    "mar": "mar",
-    "apr": "apr",
-    "mai": "may",
-    "jun": "jun",
-    "jul": "jul",
-    "aug": "aug",
-    "sep": "sep",
-    "okt": "oct",
-    "nov": "nov",
-    "des": "dec",
-}
-
-
-nor_days = {
-    "Mandag": "Monday",
-    "Tirsdag": "Tuesday",
-    "Onsdag": "Wednesday",
-    "Torsdag": "Thursday",
-    "Fredag": "Friday",
-    "Lørdag": "Saturday",
-    "Søndag": "Sunday",
-}
-
-# Add this shit as they use different caps on different parts for the site..
-nor_days.update({key.lower(): value.lower() for key, value in nor_days.items()})
-
-
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Required("streetid", default=""): cv.string,
-        vol.Required("kommune", default=""): cv.string,
+        vol.Optional("address", default=''): cv.string,
+        vol.Optional("street_id", default=''): cv.string,
+        vol.Optional("kommune", default=''): cv.string,
         vol.Optional("garbage_types", default=garbage_types): list,
     }
 )
@@ -61,14 +33,43 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 MIN_TIME_BETWEEN_UPDATES = timedelta(weeks=4)
 
 
+def check_settings(config, hass):
+    if not any(config.get(i) for i in ["street_id", "kommune"]):
+        _LOGGER.info("street_id or kommune was not set config")
+    else:
+        return True
+    if not config.get("address"):
+        _LOGGER.info("address was not set")
+    else:
+        return True
+
+    if not hass.config.latitude or not hass.config.longitude:
+        _LOGGER.info("latitude and longitude is not set in ha settings.")
+    else:
+        return True
+
+    raise ValueError('Missing settings to setup the sensor.')
+
+
 async def async_setup_platform(
     hass, config_entry, async_add_devices, discovery_info=None
 ):
     """Setup sensor platform for the ui"""
     config = config_entry
-    streetid = config.get("streetid")
+    street_id = config.get("street_id")
     kommune = config.get("kommune")
-    data = AvfallSorData(streetid, kommune, async_get_clientsession(hass))
+    address = config.get("address")
+
+    check_settings(config, hass)
+    data = AvfallSorData(
+        address,
+        street_id,
+        kommune,
+        hass.config.latitude,
+        hass.config.longitude,
+        async_get_clientsession(hass),
+    )
+
     await data.update()
     sensors = []
     for gb_type in config.get("garbage_types"):
@@ -82,9 +83,19 @@ async def async_setup_platform(
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
-    streetid = config.get("streetid")
+    street_id = config.get("street_id")
     kommune = config.get("kommune")
-    data = AvfallSorData(streetid, kommune, async_get_clientsession(hass))
+    address = config.get("address")
+    check_settings(config, hass)
+    data = AvfallSorData(
+        address,
+        street_id,
+        kommune,
+        hass.config.latitude,
+        hass.config.longitude,
+        async_get_clientsession(hass),
+    )
+
     sensors = []
     for gb_type in config.get("garbage_types"):
         sensor = AvfallSor(data, gb_type)
@@ -102,7 +113,7 @@ async def async_remove_entry(hass, config_entry):
     except ValueError:
         pass
 
-
+'''
 def find_next_garbage_pickup(dates):
     if dates is None:
         return
@@ -128,8 +139,8 @@ def to_dt(s):
             s = s.replace(k, v)
 
     return datetime.strptime(s.strip(), "%A %d. %b %Y")
-
-
+'''
+'''
 def parse_tomme_kalender(text):
     """Parse the avfallsør tømme kalender to a dict."""
     from bs4 import BeautifulSoup
@@ -185,20 +196,54 @@ def parse_tomme_kalender(text):
                         tomme_days[k].append(i[1])
 
     return tomme_days
+'''
 
 
 class AvfallSorData:
-    def __init__(self, streetid, kommune, client):
-        self._streetid = streetid
+    def __init__(self, address, street_id, kommune, lat, lon, client):
+        self._address = address
+        self._street_id = street_id
         self._kommune = kommune
         self.client = client
         self._data = {}
         self._last_update = None
+        self._grbrstr = None
+        self._lat = lat
+        self._lon = lon
+
+    async def find_street_id(self):
+        """Helper to get get the correct info with the least possible setup
+
+           Find the info using different methods where the prios are:
+           1. streetid and kommune
+           2. address
+           3. lat and lon set in ha config when this was setup.
+
+        """
+        _LOGGER.info("called find_street_id")
+        if not len(self._street_id) and not len(self._kommune):
+            if self._address and self._grbrstr is None:
+                result = await find_address(self._address, self.client)
+                if result:
+                    self._grbrstr = result
+                    return
+            if self._lat and self._lon and self._grbrstr is None:
+                result = await find_address_from_lat_lon(
+                    self._lat, self._lon, self.client
+                )
+                if result:
+                    self._grbrstr = result
+                    return
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     async def _update(self):
         _LOGGER.info("Fetching stuff for AvfallSorData")
-        url = f"https://avfallsor.no/tommekalender/?id={self._streetid}&kommune={self._kommune}"
+        await self.find_street_id()
+        if self._street_id and self._kommune:
+            url = f"https://avfallsor.no/tommekalender/?id={self._street_id}&kommune={self._kommune}"
+        elif self._grbrstr:
+            # This seems to redirect to the url above.
+            url = f"https://avfallsor.no/tommekalender/?gbnr={self._grbrstr}.&searchString=&mnr=&type=adrSearchBtn&pappPapirPlast=true&glassMetall=true"
         resp = await self.client.get(url)
         if resp.status == 200:
             text = await resp.text()
@@ -260,7 +305,7 @@ class AvfallSor(Entity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"avfallsor_{self._garbage_type}"
+        return f"avfallsor_{self._garbage_type}_{self.data._street_id or self.data._grbrstr}"
 
     @property
     def device_state_attributes(self):

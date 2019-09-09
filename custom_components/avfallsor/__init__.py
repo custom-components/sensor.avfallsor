@@ -27,6 +27,35 @@ garbage_types = ["paper", "bio", "mixed", "metal"]
 _LOGGER = logging.getLogger(__name__)
 
 
+nor_months = {
+    "jan": "jan",
+    "feb": "feb",
+    "mar": "mar",
+    "apr": "apr",
+    "mai": "may",
+    "jun": "jun",
+    "jul": "jul",
+    "aug": "aug",
+    "sep": "sep",
+    "okt": "oct",
+    "nov": "nov",
+    "des": "dec",
+}
+
+
+nor_days = {
+    "Mandag": "Monday",
+    "Tirsdag": "Tuesday",
+    "Onsdag": "Wednesday",
+    "Torsdag": "Thursday",
+    "Fredag": "Friday",
+    "Lørdag": "Saturday",
+    "Søndag": "Sunday",
+}
+
+# Add this shit as they use different caps on different parts for the site..
+nor_days.update({key.lower(): value.lower() for key, value in nor_days.items()})
+
 async def async_setup(hass, config):
     """Set up this component using YAML."""
     _LOGGER.info(STARTUP)
