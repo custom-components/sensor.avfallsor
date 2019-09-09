@@ -4,7 +4,7 @@
         "step": {
             "user": {
                 "title": "Avfallsor",
-                "description": "Setup a avfallsor sensor",
+                "description": "Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
                     "address": "Gatenavn husnummer, Stedsnavn",
                     "kommune": "kommune",
