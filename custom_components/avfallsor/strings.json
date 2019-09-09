@@ -3,11 +3,12 @@
         "title": "Avfallsor",
         "step": {
             "user": {
-                "title": "Sensor",
+                "title": "Avfallsor",
                 "description": "Setup a avfallsor sensor",
                 "data": {
+                    "address": "Gatenavn husnummer, Stedsnavn",
                     "kommune": "kommune",
-                    "streetid": "streetid"
+                    "street_id": "Finn id på https://avfallsor.no/tommekalender/"
                     
                 }
             }

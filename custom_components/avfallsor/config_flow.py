@@ -3,6 +3,7 @@ import logging
 from collections import OrderedDict
 
 import voluptuous as vol
+import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
 
 from . import DOMAIN, garbage_types
@@ -29,16 +30,20 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
         self._errors = {}
 
         if user_input is not None:
+            # I think the title is wrong..
             return self.async_create_entry(title="avfallsor", data=user_input)
 
         return await self._show_config_form(user_input)
 
     async def _show_config_form(self, user_input):
         """Show the configuration form to edit location data."""
+
         data_schema = OrderedDict()
-        data_schema[vol.Required("streetid", default="")] = str
-        data_schema[vol.Required("kommune", default="")] = str
-        data_schema[vol.Optional("garbage_types", default=garbage_types)] = list
+        data_schema[vol.Optional("address", default='')] = str
+        data_schema[vol.Optional("street_id", default="")] = str
+        data_schema[vol.Optional("kommune", default="")] = str
+        # Figure out why this dont work.
+        # data_schema[vol.Optional("garbage_types", default=garbage_types)] = cv.ensure_list
 
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(data_schema), errors=self._errors
