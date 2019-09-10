@@ -4,7 +4,6 @@ from collections import OrderedDict
 
 import voluptuous as vol
 
-import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
 from homeassistant.core import callback
 
@@ -14,14 +13,39 @@ from . import DOMAIN, garbage_types
 _LOGGER = logging.getLogger(__name__)
 
 
-def create_schema():
+def create_schema(entry, option=False):
+    """Create a default schema based on if a option or if settings
+       is already filled out.
+    """
+
+    default_garbage_types_enabled = []
+
+    if option:
+        default_adress = entry.data["address"]
+        default_street_id = entry.data["street_id"]
+        default_kommune = entry.data["kommune"]
+        default_garbage_types = entry.data["garbage_types"]
+        for z in entry.data.get("garbage_types", garbage_types):
+            default_garbage_types_enabled.append(z)
+    else:
+        default_adress = ""
+        default_street_id = ""
+        default_kommune = ""
+        default_garbage_types_enabled = garbage_types
+
     data_schema = OrderedDict()
-    data_schema[vol.Optional("address", default="", description="address")] = str
-    data_schema[vol.Optional("street_id", default="", description="street_id")] = str
-    data_schema[vol.Optional("kommune", default="", description="kommune")] = str
+    data_schema[vol.Optional("address", default=default_adress, description="address")] = str
+    data_schema[vol.Optional("street_id", default=default_street_id, description="street_id")] = str
+    data_schema[vol.Optional("kommune", default=default_kommune, description="kommune")] = str
 
     for gbt in garbage_types:
-        data_schema[vol.Optional(gbt, default=True, description=gbt)] = bool
+        if option:
+            if gbt in default_garbage_types_enabled:
+                data_schema[vol.Optional(gbt, default=True)] = bool
+            else:
+                data_schema[vol.Optional(gbt, default=False)] = bool
+        else:
+            data_schema[vol.Optional(gbt, default=True)] = bool
 
     return data_schema
 
@@ -60,7 +84,7 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
     async def _show_config_form(self, user_input):
         """Show the configuration form to edit location data."""
 
-        data_schema = create_schema()
+        data_schema = create_schema(user_input)
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(data_schema), errors=self._errors
         )
@@ -80,43 +104,33 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
 
 
 class AvfallsorOptionsHandler(config_entries.OptionsFlow):
+    """Now this class isnt like any normal option handlers.. as hav devsoption seems think options is
+    #  supposed to be EXTRA options, i disagree, a user should be able to edit anything.."""
+
     def __init__(self, config_entry):
         self.config_entry = config_entry
         self.options = dict(config_entry.options)
         self._errors = {}
 
     async def async_step_init(self, user_input=None):
-        _LOGGER.info("user input %r" % user_input)
-
-        #_LOGGER.info('options %r' % dict(self.config_entry.options))
-        #_LOGGER.info('data %r' % dict(self.config_entry.data))
-
-        old_settings = self.config_entry.data
-
-        if user_input is not None:
-            _LOGGER.info('shit isnt none')
-            if user_input != old_settings:
-                # There some stuff that are changed.
-                user_input = old_settings.update(user_input)
-            else:
-                _LOGGER.info('didnt update settings as they where the same as the old one.')
-
-            if user_input:
-                _LOGGER.info('should have created new entry')
-                return self.async_create_entry(title="", data=user_input)
-
         return self.async_show_form(
             step_id="edit",
-            data_schema=vol.Schema(
-                create_schema()
-
-
-            ),
-            errors=self._errors
+            data_schema=vol.Schema(create_schema(self.config_entry, option=True)),
+            errors=self._errors,
         )
 
-    async def _show_config_form(self, user_input=None):
-        pass
-        # https://github.com/thomasloven/hass-favicon/blob/master/custom_components/favicon/__init__.py#L25
-        #
-        # hass.config_entries.async_update_entry(self.config_entry, options=options)
+    async def async_step_edit(self, user_input):
+
+        if user_input is not None:
+            gbt = []
+            for key, value in dict(user_input).items():
+                if key in garbage_types and value is True:
+                    gbt.append(key)
+                    user_input.pop(key)
+
+            if len(gbt):
+                user_input["garbage_types"] = gbt
+
+            self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)
+            return self.async_create_entry(title="", data={})
+        # Think we need to return something here.

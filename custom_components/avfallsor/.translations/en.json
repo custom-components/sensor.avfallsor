@@ -17,7 +17,7 @@
             },
             "edit": {
                 "title": "Avfallsor",
-                "description": "Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
+                "description": "Edit Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
                     "address": "Gatenavn husnummer, Stedsnavn",
                     "kommune": "kommune",
@@ -26,26 +26,30 @@
                     "bio": "bio",
                     "mixed": "mixed",
                     "metal": "metal"
-                    }
+                }
             }
+
 
         },
         "error": {
             "name_exists": "Name already exists"
-        },
-        "edit": {
-            "title": "Avfallsor",
-            "description": "Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
-            "data": {
-                "address": "Gatenavn husnummer, Stedsnavn",
-                "kommune": "kommune",
-                "street_id": "Finn id på https://avfallsor.no/tommekalender/",
-                "paper": "paper",
-                "bio": "bio",
-                "mixed": "mixed",
-                "metal": "metal"
+        }
+    },
+    "options": {
+        "step": {
+            "edit": {
+                "title": "test 1234",
+                "description": "random",
+                "data": {
+                    "address": "Gatenavn husnummer, Stedsnavn",
+                    "kommune": "kommune",
+                    "street_id": "Finn id på https://avfallsor.no/tommekalender/",
+                    "paper": "paper",
+                    "bio": "bio",
+                    "mixed": "mixed",
+                    "metal": "metal"
+                }
             }
         }
-
     }
 }
