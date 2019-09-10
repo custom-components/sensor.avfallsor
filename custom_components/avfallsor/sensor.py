@@ -140,7 +140,6 @@ class AvfallSorData:
            3. lat and lon set in ha config when this was setup.
 
         """
-        _LOGGER.info("called find_street_id")
         if not len(self._street_id) and not len(self._kommune):
             if self._address and self._grbrstr is None:
                 result = await find_address(self._address, self.client)
@@ -193,6 +192,7 @@ class AvfallSor(Entity):
 
     @property
     def next_garbage_pickup(self):
+        """Get the date of the next picked for that garbage type."""
         if self._garbage_type == "paper":
             return find_next_garbage_pickup(self.data._data.get("paper"))
 
@@ -206,7 +206,7 @@ class AvfallSor(Entity):
             return find_next_garbage_pickup(self.data._data.get("metal"))
 
     @property
-    def icon(self):
+    def icon(self) -> str:
         """Shows the correct icon for container."""
         # todo fix icons.
         if self._garbage_type == "paper":
@@ -222,7 +222,7 @@ class AvfallSor(Entity):
             return "mdi:recycle"
 
     @property
-    def unique_id(self):
+    def unique_id(self) -> str:
         """Return the name of the sensor."""
         return f"avfallsor_{self._garbage_type}_{self.data._street_id or self.data._grbrstr}"
 
@@ -231,7 +231,7 @@ class AvfallSor(Entity):
         return self.unique_id
 
     @property
-    def device_state_attributes(self):
+    def device_state_attributes(self) -> dict:
         """Return the state attributes."""
         return {
             "next garbage pickup": self.next_garbage_pickup,
@@ -240,7 +240,7 @@ class AvfallSor(Entity):
         }
 
     @property
-    def device_info(self):
+    def device_info(self) -> dict:
         """I can't remember why this was needed :D"""
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
@@ -249,7 +249,7 @@ class AvfallSor(Entity):
         }
 
     @property
-    def unit(self):
+    def unit(self)-> int:
         """Unit"""
         return int
 

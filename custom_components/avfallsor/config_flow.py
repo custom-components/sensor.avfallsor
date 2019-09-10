@@ -3,8 +3,11 @@ import logging
 from collections import OrderedDict
 
 import voluptuous as vol
+
 import homeassistant.helpers.config_validation as cv
 from homeassistant import config_entries
+from homeassistant.core import callback
+
 
 from . import DOMAIN, garbage_types
 
@@ -68,3 +71,52 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
         Instead, we're going to rely on the values that are in config file.
         """
         return self.async_create_entry(title="configuration.yaml", data={})
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return AvfallsorOptionsHandler(config_entry)
+
+
+class AvfallsorOptionsHandler(config_entries.OptionsFlow):
+    def __init__(self, config_entry):
+        self.config_entry = config_entry
+        self.options = dict(config_entry.options)
+        self._errors = {}
+
+    async def async_step_init(self, user_input=None):
+        _LOGGER.info("user input %r" % user_input)
+
+        #_LOGGER.info('options %r' % dict(self.config_entry.options))
+        #_LOGGER.info('data %r' % dict(self.config_entry.data))
+
+        old_settings = self.config_entry.data
+
+        if user_input is not None:
+            _LOGGER.info('shit isnt none')
+            if user_input != old_settings:
+                # There some stuff that are changed.
+                user_input = old_settings.update(user_input)
+            else:
+                _LOGGER.info('didnt update settings as they where the same as the old one.')
+
+            if user_input:
+                _LOGGER.info('should have created new entry')
+                return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="edit",
+            data_schema=vol.Schema(
+                create_schema()
+
+
+            ),
+            errors=self._errors
+        )
+
+    async def _show_config_form(self, user_input=None):
+        pass
+        # https://github.com/thomasloven/hass-favicon/blob/master/custom_components/favicon/__init__.py#L25
+        #
+        # hass.config_entries.async_update_entry(self.config_entry, options=options)

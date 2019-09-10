@@ -104,7 +104,6 @@ def parse_tomme_kalender(text):
 
 
 async def find_address(address, client):
-    _LOGGER.info("called find_address")
     if not address:
         return
 
@@ -124,11 +123,9 @@ async def find_address(address, client):
 
 
 async def find_address_from_lat_lon(lat, lon, client):
-
     if lat is None or lon is None:
         return
-    _LOGGER.info("called find_adress_from_lat_lon")
-    # https://ws.geonorge.no/adresser/v1/punktsok?lat=58.110263&lon=7.981951&radius=20
+
     url = f"https://ws.geonorge.no/adresser/v1/punktsok?lon={lon}&lat={lat}&radius=20"
     resp = await client.get(url)
     if resp.status == 200:
