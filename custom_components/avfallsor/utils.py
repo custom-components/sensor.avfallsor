@@ -114,10 +114,13 @@ async def find_address(address, client):
 
     if resp.status == 200:
         result = await resp.json()
-        res = result[0]
-        _LOGGER.info('Got %s', res["veiadresse"])
-        res = '%s.%s.%s.%s' % (res["kommunenr"], res["gaardsnr"], res["bruksnr"], res["festenr"])
-        return res
+        if len(result):
+            res = result[0]
+            _LOGGER.info('Got %s', res["veiadresse"])
+            res = '%s.%s.%s.%s' % (res["kommunenr"], res["gaardsnr"], res["bruksnr"], res["festenr"])
+            return res
+        else:
+            _LOGGER.info("Failed to find the address %s", address)
 
 
 async def find_address_from_lat_lon(lat, lon, client):

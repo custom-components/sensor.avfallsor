@@ -8,7 +8,11 @@
                 "data": {
                     "address": "Gatenavn husnummer, Stedsnavn",
                     "kommune": "kommune",
-                    "street_id": "Finn id på https://avfallsor.no/tommekalender/"
+                    "street_id": "Finn id på https://avfallsor.no/tommekalender/",
+                    "paper": "paper",
+                    "bio": "bio",
+                    "mixed": "mixed",
+                    "metal": "metal"
                     
                 }
             }

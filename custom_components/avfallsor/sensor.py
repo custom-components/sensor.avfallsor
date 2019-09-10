@@ -51,7 +51,7 @@ def check_settings(config, hass):
     else:
         return True
 
-    raise ValueError("Missing settings to setup the sensor.")
+    raise vol.Invalid("Missing settings to setup the sensor.")
 
 
 async def async_setup_platform(
@@ -129,6 +129,7 @@ class AvfallSorData:
         self._grbrstr = None
         self._lat = lat
         self._lon = lon
+        self._friendly_name = None
 
     async def find_street_id(self):
         """Helper to get get the correct info with the least possible setup
@@ -221,9 +222,13 @@ class AvfallSor(Entity):
             return "mdi:recycle"
 
     @property
-    def name(self):
+    def unique_id(self):
         """Return the name of the sensor."""
         return f"avfallsor_{self._garbage_type}_{self.data._street_id or self.data._grbrstr}"
+
+    @property
+    def name(self) -> str:
+        return self.unique_id
 
     @property
     def device_state_attributes(self):
@@ -240,10 +245,19 @@ class AvfallSor(Entity):
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self.name,
-            "manufacturer": "someone",
+            "manufacturer": DOMAIN,
         }
 
     @property
     def unit(self):
         """Unit"""
+        return int
+
+    @property
+    def unit_of_measurement(self) -> str:
+        """Return the unit of measurement this sensor expresses itself in."""
         return "days"
+
+    @property
+    def friendly_name(self) -> str:
+        return self._friendly_name

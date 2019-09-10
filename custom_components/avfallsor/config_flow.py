@@ -10,7 +10,18 @@ from . import DOMAIN, garbage_types
 
 _LOGGER = logging.getLogger(__name__)
 
-# This stuff is untested.
+
+def create_schema():
+    data_schema = OrderedDict()
+    data_schema[vol.Optional("address", default="", description="address")] = str
+    data_schema[vol.Optional("street_id", default="", description="street_id")] = str
+    data_schema[vol.Optional("kommune", default="", description="kommune")] = str
+
+    for gbt in garbage_types:
+        data_schema[vol.Optional(gbt, default=True, description=gbt)] = bool
+
+    return data_schema
+
 
 @config_entries.HANDLERS.register(DOMAIN)
 class AvfallSorFlowHandler(config_entries.ConfigFlow):
@@ -30,7 +41,15 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
         self._errors = {}
 
         if user_input is not None:
-            # I think the title is wrong..
+            gbt = []
+            for key, value in dict(user_input).items():
+                if key in garbage_types and value is True:
+                    gbt.append(key)
+                    user_input.pop(key)
+
+            if len(gbt):
+                user_input["garbage_types"] = gbt
+            # Think the title is wrong..
             return self.async_create_entry(title="avfallsor", data=user_input)
 
         return await self._show_config_form(user_input)
@@ -38,13 +57,7 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
     async def _show_config_form(self, user_input):
         """Show the configuration form to edit location data."""
 
-        data_schema = OrderedDict()
-        data_schema[vol.Optional("address", default='')] = str
-        data_schema[vol.Optional("street_id", default="")] = str
-        data_schema[vol.Optional("kommune", default="")] = str
-        # Figure out why this dont work.
-        # data_schema[vol.Optional("garbage_types", default=garbage_types)] = cv.ensure_list
-
+        data_schema = create_schema()
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(data_schema), errors=self._errors
         )

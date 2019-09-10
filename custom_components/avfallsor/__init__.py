@@ -56,6 +56,7 @@ nor_days = {
 # Add this shit as they use different caps on different parts for the site..
 nor_days.update({key.lower(): value.lower() for key, value in nor_days.items()})
 
+
 async def async_setup(hass, config):
     """Set up this component using YAML."""
     _LOGGER.info(STARTUP)
