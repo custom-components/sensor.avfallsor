@@ -29,10 +29,10 @@
                 }
             }
 
-
         },
         "error": {
-            "name_exists": "Name already exists"
+            "missing_addresse": "Could not find the adresse",
+            "wrong_lat_lon": "lat and lon is wrong."
         }
     },
     "options": {
@@ -50,6 +50,10 @@
                     "metal": "metal"
                 }
             }
+        },
+        "error": {
+            "missing_addresse": "Could not find the adresse",
+            "wrong_lat_lon": "lat and lon is wrong."
         }
     }
 }

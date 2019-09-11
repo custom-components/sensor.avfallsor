@@ -6,10 +6,31 @@ from collections import defaultdict
 
 from datetime import datetime, date, timedelta
 
+import voluptuous as vol
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
 from . import nor_days, nor_months
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def check_settings(config, hass):
+    if not any(config.get(i) for i in ["street_id", "kommune"]):
+        _LOGGER.info("street_id or kommune was not set config")
+    else:
+        return True
+    if not config.get("address"):
+        _LOGGER.info("address was not set")
+    else:
+        return True
+
+    if not hass.config.latitude or not hass.config.longitude:
+        _LOGGER.info("latitude and longitude is not set in ha settings.")
+    else:
+        return True
+
+    raise vol.Invalid("Missing settings to setup the sensor.")
 
 
 def find_next_garbage_pickup(dates):
@@ -101,6 +122,33 @@ def parse_tomme_kalender(text):
                         tomme_days[k].append(i[1])
 
     return tomme_days
+
+
+async def verify_that_we_can_find_adr(config, hass):
+    _LOGGER.info("%r", config)
+    client = async_get_clientsession(hass)
+    try:
+        adr = await find_address(config.get("address"), client)
+        if adr:
+            return True
+    except:
+        pass
+
+    try:
+        adr = await find_address_from_lat_lon(hass.config.latitude, hass.config.longitude, client)
+        if adr:
+            return True
+    except:
+        pass
+
+    try:
+        # This just to check the lat and lon, the other
+        # stuff is tested above.
+        check_settings(config, hass)
+    except vol.Invalid:
+        return False
+
+    return False
 
 
 async def find_address(address, client):

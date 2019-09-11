@@ -163,6 +163,8 @@ class AvfallSorData:
         elif self._grbrstr:
             # This seems to redirect to the url above.
             url = f"https://avfallsor.no/tommekalender/?gbnr={self._grbrstr}.&searchString=&mnr=&type=adrSearchBtn&pappPapirPlast=true&glassMetall=true"
+        else:
+            return
         resp = await self.client.get(url)
         if resp.status == 200:
             text = await resp.text()
@@ -210,16 +212,16 @@ class AvfallSor(Entity):
         """Shows the correct icon for container."""
         # todo fix icons.
         if self._garbage_type == "paper":
-            return "mdi:recycle"
+            return "mdi:trash-can"
 
         elif self._garbage_type == "bio":
-            return "mdi:recycle"
+            return "mdi:trash-can"
 
         elif self._garbage_type == "mixed":
-            return "mdi:recycle"
+            return "mdi:trash-can"
 
         elif self._garbage_type == "metal":
-            return "mdi:recycle"
+            return "mdi:trash-can"
 
     @property
     def unique_id(self) -> str:

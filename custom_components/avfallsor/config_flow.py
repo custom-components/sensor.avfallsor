@@ -9,6 +9,7 @@ from homeassistant.core import callback
 
 
 from . import DOMAIN, garbage_types
+from .utils import verify_that_we_can_find_adr
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +25,6 @@ def create_schema(entry, option=False):
         default_adress = entry.data["address"]
         default_street_id = entry.data["street_id"]
         default_kommune = entry.data["kommune"]
-        default_garbage_types = entry.data["garbage_types"]
         for z in entry.data.get("garbage_types", garbage_types):
             default_garbage_types_enabled.append(z)
     else:
@@ -34,9 +34,15 @@ def create_schema(entry, option=False):
         default_garbage_types_enabled = garbage_types
 
     data_schema = OrderedDict()
-    data_schema[vol.Optional("address", default=default_adress, description="address")] = str
-    data_schema[vol.Optional("street_id", default=default_street_id, description="street_id")] = str
-    data_schema[vol.Optional("kommune", default=default_kommune, description="kommune")] = str
+    data_schema[
+        vol.Optional("address", default=default_adress, description="address")
+    ] = str
+    data_schema[
+        vol.Optional("street_id", default=default_street_id, description="street_id")
+    ] = str
+    data_schema[
+        vol.Optional("kommune", default=default_kommune, description="kommune")
+    ] = str
 
     for gbt in garbage_types:
         if option:
@@ -65,7 +71,6 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
         self, user_input=None
     ):  # pylint: disable=dangerous-default-value
         """Handle a flow initialized by the user."""
-        self._errors = {}
 
         if user_input is not None:
             gbt = []
@@ -77,12 +82,18 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
             if len(gbt):
                 user_input["garbage_types"] = gbt
             # Think the title is wrong..
-            return self.async_create_entry(title="avfallsor", data=user_input)
+
+            adr = await verify_that_we_can_find_adr(user_input, self.hass)
+            if adr:
+                return self.async_create_entry(title="avfallsor", data=user_input)
+            else:
+                self._errors["base"] = "missing_addresse"
 
         return await self._show_config_form(user_input)
 
     async def _show_config_form(self, user_input):
         """Show the configuration form to edit location data."""
+        _LOGGER.info("%r", self._errors)
 
         data_schema = create_schema(user_input)
         return self.async_show_form(
@@ -113,6 +124,7 @@ class AvfallsorOptionsHandler(config_entries.OptionsFlow):
         self._errors = {}
 
     async def async_step_init(self, user_input=None):
+
         return self.async_show_form(
             step_id="edit",
             data_schema=vol.Schema(create_schema(self.config_entry, option=True)),
@@ -131,6 +143,19 @@ class AvfallsorOptionsHandler(config_entries.OptionsFlow):
             if len(gbt):
                 user_input["garbage_types"] = gbt
 
-            self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)
-            return self.async_create_entry(title="", data={})
-        # Think we need to return something here.
+            adr = await verify_that_we_can_find_adr(user_input, self.hass)
+            if adr:
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry, data=user_input
+                )
+                return self.async_create_entry(title="", data={})
+            else:
+                self._errors["base"] = "missing_addresse"
+                # not suere this should be config_entry or user_input.
+                return self.async_show_form(
+                    step_id="edit",
+                    data_schema=vol.Schema(
+                        create_schema(self.config_entry, option=True)
+                    ),
+                    errors=self._errors,
+                )
