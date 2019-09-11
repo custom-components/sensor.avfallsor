@@ -5,10 +5,7 @@ Simple sensor for avfallsor (garbage pickup)
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]](LICENSE.md)
-
 [![hacs][hacsbadge]][hacs]
-![Project Maintenance][maintenance-shield]
-
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
@@ -55,6 +52,8 @@ sensor:
 
 ### Integrations
 - In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "avfallsor"
+
+See the `lovelace_example` folder for config example
 
 
 [commits-shield]: https://img.shields.io/github/commit-activity/y/custom-components/blueprint.svg?style=for-the-badge
