@@ -22,7 +22,7 @@ If you have any issues with this you need to open an issue here:
     name=NAME, version=VERSION, issueurl=ISSUEURL
 )
 
-garbage_types = ["paper", "bio", "mixed", "metal"]
+garbage_types = ["paper", "bio", "mixed", "metal", "plastic"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -89,6 +89,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 async def async_remove_entry(hass, config_entry):
     try:
         await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
-        _LOGGER.info("Successfully removed sensor from the blueprint integration")
+        _LOGGER.info("Successfully removed sensor from the avfallsor integration")
     except ValueError:
         pass

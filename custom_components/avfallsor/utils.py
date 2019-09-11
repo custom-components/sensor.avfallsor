@@ -17,16 +17,16 @@ _LOGGER = logging.getLogger(__name__)
 
 def check_settings(config, hass):
     if not any(config.get(i) for i in ["street_id", "kommune"]):
-        _LOGGER.info("street_id or kommune was not set config")
+        _LOGGER.debug("street_id or kommune was not set config")
     else:
         return True
     if not config.get("address"):
-        _LOGGER.info("address was not set")
+        _LOGGER.debug("address was not set")
     else:
         return True
 
     if not hass.config.latitude or not hass.config.longitude:
-        _LOGGER.info("latitude and longitude is not set in ha settings.")
+        _LOGGER.debug("latitude and longitude is not set in ha settings.")
     else:
         return True
 
@@ -87,6 +87,7 @@ def parse_tomme_kalender(text):
     for li in tmk:
         if "grønn" in li.img.get("alt", ""):
             tomme_days["paper"].append(to_dt(li.text.strip()))
+            tomme_days["plastic"].append(to_dt(li.text.strip()))
         elif "glass" in li.img.get("alt", ""):
             tomme_days["metal"].append(to_dt(li.text.strip()))
         # Grab the tomme exceptions
@@ -99,6 +100,7 @@ def parse_tomme_kalender(text):
                     exceptions["rest"].append((to_dt(old), to_dt(new)))
                 elif "Grønn" in item["src"]:
                     exceptions["paper"].append((to_dt(old), to_dt(new)))
+                    exceptions["plastic"].append((to_dt(old), to_dt(new)))
                 elif "glass" in item["src"]:
                     exceptions["metal"].append((to_dt(old), to_dt(new)))
 
@@ -125,7 +127,6 @@ def parse_tomme_kalender(text):
 
 
 async def verify_that_we_can_find_adr(config, hass):
-    _LOGGER.info("%r", config)
     client = async_get_clientsession(hass)
     try:
         adr = await find_address(config.get("address"), client)
@@ -163,7 +164,7 @@ async def find_address(address, client):
         result = await resp.json()
         if len(result):
             res = result[0]
-            _LOGGER.info('Got %s', res["veiadresse"])
+            _LOGGER.debug('Got %s', res["veiadresse"])
             res = '%s.%s.%s.%s' % (res["kommunenr"], res["gaardsnr"], res["bruksnr"], res["festenr"])
             return res
         else:
@@ -182,7 +183,7 @@ async def find_address_from_lat_lon(lat, lon, client):
         if res:
             # The first one seems to be the most correct.
             res = res[0]
-            _LOGGER.info('Got adresse %s from lat %s lon %s', res.get("adressetekst"), lat, lon)
+            _LOGGER.debug('Got adresse %s from lat %s lon %s', res.get("adressetekst"), lat, lon)
             return '%s.%s.%s.%s' % (res["kommunenummer"], res["gardsnummer"], res["bruksnummer"], res["festenummer"])
     elif resp.status == 400:
         result = await resp.json()

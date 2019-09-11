@@ -27,7 +27,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional("address", default=""): cv.string,
         vol.Optional("street_id", default=""): cv.string,
-        vol.Optional("kommune", default=""): cv.string,
+        vol.Optional("municipality", default=""): cv.string,
         vol.Optional("garbage_types", default=garbage_types): list,
     }
 )
@@ -37,17 +37,17 @@ MIN_TIME_BETWEEN_UPDATES = timedelta(weeks=4)
 
 
 def check_settings(config, hass):
-    if not any(config.get(i) for i in ["street_id", "kommune"]):
-        _LOGGER.info("street_id or kommune was not set config")
+    if not any(config.get(i) for i in ["street_id", "municipality"]):
+        _LOGGER.debug("street_id or municipality was not set config")
     else:
         return True
     if not config.get("address"):
-        _LOGGER.info("address was not set")
+        _LOGGER.debug("address was not set")
     else:
         return True
 
     if not hass.config.latitude or not hass.config.longitude:
-        _LOGGER.info("latitude and longitude is not set in ha settings.")
+        _LOGGER.debug("latitude and longitude is not set in ha settings.")
     else:
         return True
 
@@ -60,14 +60,14 @@ async def async_setup_platform(
     """Setup sensor platform for the ui"""
     config = config_entry
     street_id = config.get("street_id")
-    kommune = config.get("kommune")
+    municipality = config.get("municipality")
     address = config.get("address")
 
     check_settings(config, hass)
     data = AvfallSorData(
         address,
         street_id,
-        kommune,
+        municipality,
         hass.config.latitude,
         hass.config.longitude,
         async_get_clientsession(hass),
@@ -87,13 +87,13 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
     street_id = config.get("street_id")
-    kommune = config.get("kommune")
+    municipality = config.get("municipality")
     address = config.get("address")
     check_settings(config, hass)
     data = AvfallSorData(
         address,
         street_id,
-        kommune,
+        municipality,
         hass.config.latitude,
         hass.config.longitude,
         async_get_clientsession(hass),
@@ -119,10 +119,10 @@ async def async_remove_entry(hass, config_entry):
 
 
 class AvfallSorData:
-    def __init__(self, address, street_id, kommune, lat, lon, client):
+    def __init__(self, address, street_id, municipality, lat, lon, client):
         self._address = address
         self._street_id = street_id
-        self._kommune = kommune
+        self._municipality = municipality
         self.client = client
         self._data = {}
         self._last_update = None
@@ -135,12 +135,12 @@ class AvfallSorData:
         """Helper to get get the correct info with the least possible setup
 
            Find the info using different methods where the prios are:
-           1. streetid and kommune
+           1. streetid and municipality
            2. address
            3. lat and lon set in ha config when this was setup.
 
         """
-        if not len(self._street_id) and not len(self._kommune):
+        if not len(self._street_id) and not len(self._municipality):
             if self._address and self._grbrstr is None:
                 result = await find_address(self._address, self.client)
                 if result:
@@ -158,8 +158,8 @@ class AvfallSorData:
     async def _update(self):
         _LOGGER.info("Fetching stuff for AvfallSorData")
         await self.find_street_id()
-        if self._street_id and self._kommune:
-            url = f"https://avfallsor.no/tommekalender/?id={self._street_id}&kommune={self._kommune}"
+        if self._street_id and self._municipality:
+            url = f"https://avfallsor.no/tommekalender/?id={self._street_id}&municipality={self._municipality}"
         elif self._grbrstr:
             # This seems to redirect to the url above.
             url = f"https://avfallsor.no/tommekalender/?gbnr={self._grbrstr}.&searchString=&mnr=&type=adrSearchBtn&pappPapirPlast=true&glassMetall=true"
@@ -207,6 +207,9 @@ class AvfallSor(Entity):
         elif self._garbage_type == "metal":
             return find_next_garbage_pickup(self.data._data.get("metal"))
 
+        elif self._garbage_type == "plastic":
+            return find_next_garbage_pickup(self.data._data.get("plastic"))
+
     @property
     def icon(self) -> str:
         """Shows the correct icon for container."""
@@ -221,6 +224,9 @@ class AvfallSor(Entity):
             return "mdi:trash-can"
 
         elif self._garbage_type == "metal":
+            return "mdi:trash-can"
+
+        elif self._garbage_type == "plastic":
             return "mdi:trash-can"
 
     @property

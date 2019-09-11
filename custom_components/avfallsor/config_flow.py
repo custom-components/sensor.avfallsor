@@ -22,15 +22,16 @@ def create_schema(entry, option=False):
     default_garbage_types_enabled = []
 
     if option:
-        default_adress = entry.data["address"]
-        default_street_id = entry.data["street_id"]
-        default_kommune = entry.data["kommune"]
+        # We use .get here incase some of the texts gets changed.
+        default_adress = entry.data.get("address", "")
+        default_street_id = entry.data.get("street_id", "")
+        default_municipality = entry.data.get("municipality", "")
         for z in entry.data.get("garbage_types", garbage_types):
             default_garbage_types_enabled.append(z)
     else:
         default_adress = ""
         default_street_id = ""
-        default_kommune = ""
+        default_municipality = ""
         default_garbage_types_enabled = garbage_types
 
     data_schema = OrderedDict()
@@ -41,7 +42,7 @@ def create_schema(entry, option=False):
         vol.Optional("street_id", default=default_street_id, description="street_id")
     ] = str
     data_schema[
-        vol.Optional("kommune", default=default_kommune, description="kommune")
+        vol.Optional("municipality", default=default_municipality, description="municipality")
     ] = str
 
     for gbt in garbage_types:

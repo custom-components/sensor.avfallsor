@@ -7,7 +7,7 @@
                 "description": "Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
                     "address": "Gatenavn husnummer, Stedsnavn",
-                    "kommune": "kommune",
+                    "municipality": "municipality",
                     "street_id": "Finn id på https://avfallsor.no/tommekalender/",
                     "paper": "paper",
                     "bio": "bio",
@@ -20,7 +20,7 @@
                 "description": "Edit Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
                     "address": "Gatenavn husnummer, Stedsnavn",
-                    "kommune": "kommune",
+                    "municipality": "municipality",
                     "street_id": "Finn id på https://avfallsor.no/tommekalender/",
                     "paper": "paper",
                     "bio": "bio",
@@ -42,7 +42,7 @@
                 "description": "random",
                 "data": {
                     "address": "Gatenavn husnummer, Stedsnavn",
-                    "kommune": "kommune",
+                    "municipality": "municipality",
                     "street_id": "Finn id på https://avfallsor.no/tommekalender/",
                     "paper": "paper",
                     "bio": "bio",
