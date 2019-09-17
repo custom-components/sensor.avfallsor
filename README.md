@@ -27,11 +27,11 @@ Key | Type | Required | Default | Description
 -- | -- | -- | -- | --
 `address` | `string` | `False` | `""` | Address for garbage pickup
 `municipality` | `string` | `False` | `""` | Name of your 
-`street_id` | `string` | `False` | `""` | Go to https://avfallsor.no/tommekalender/ enter the address and the hour number, press "vis tømmekalender" after that you get redirect to url that looks something like this: ```https://avfallsor.no/tommekalender/?id=12345&kommune=Kristiansand``` gram the id and the kommune in the url.
+`street_id` | `string` | `False` | `""` | Go to https://avfallsor.no/tommekalender/ enter the address and the hour number, press "vis tømmekalender" after that you get redirect to url that looks something like this: ```https://avfallsor.no/tommekalender/?id=12345&kommune=Kristiansand``` grab the id and the kommune in the url.
 
 The sensor tries to find the your address (to find the pickup dates for your address) in this order:
-1. street_id and municipality
-2. Address
+1. `street_id` and `municipality`
+2. `address`
 3. Lat and lon that you entered when you setup home assistant.
 
 ### Yaml
@@ -56,7 +56,7 @@ sensor:
 See the `lovelace_example` folder for config example
 
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/custom-components/blueprint.svg?style=for-the-badge
+[commits-shield]: https://img.shields.io/github/commit-activity/y/custom-components/sensor.avfallsor.svg?style=for-the-badge
 [commits]: https://github.com/custom-components/sensor.avfallsor/commits/master
 [hacs]: https://github.com/custom-components/hacs
 [hacsbadge]: https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge
@@ -67,4 +67,4 @@ See the `lovelace_example` folder for config example
 [forum]: https://community.home-assistant.io/
 [license-shield]: https://img.shields.io/github/license/custom-components/blueprint.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/custom-components/blueprint.svg?style=for-the-badge
-[releases]: https://github.com/custom-components/blueprint/releases
+[releases]: https://github.com/custom-components/sensor.avfallsor/releases
