@@ -16,8 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def check_settings(config, hass):
-    if not any(config.get(i) for i in ["street_id", "kommune"]):
-        _LOGGER.debug("street_id or kommune was not set config")
+    if not any(config.get(i) for i in ["street_id", "municipality"]):
+        _LOGGER.debug("street_id or municipality was not set config")
     else:
         return True
     if not config.get("address"):
@@ -145,7 +145,9 @@ async def verify_that_we_can_find_adr(config, hass):
     try:
         # This just to check the lat and lon, the other
         # stuff is tested above.
-        check_settings(config, hass)
+        chk = check_settings(config, hass)
+        if chk:
+            return True
     except vol.Invalid:
         return False
 

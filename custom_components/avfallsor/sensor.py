@@ -159,12 +159,13 @@ class AvfallSorData:
         _LOGGER.info("Fetching stuff for AvfallSorData")
         await self.find_street_id()
         if self._street_id and self._municipality:
-            url = f"https://avfallsor.no/tommekalender/?id={self._street_id}&municipality={self._municipality}"
+            url = f"https://avfallsor.no/tommekalender/?id={self._street_id}&kommune={self._municipality}"
         elif self._grbrstr:
             # This seems to redirect to the url above.
             url = f"https://avfallsor.no/tommekalender/?gbnr={self._grbrstr}.&searchString=&mnr=&type=adrSearchBtn&pappPapirPlast=true&glassMetall=true"
         else:
             return
+        _LOGGER.debug('Fetching data from %s', url)
         resp = await self.client.get(url)
         if resp.status == 200:
             text = await resp.text()

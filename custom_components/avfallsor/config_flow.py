@@ -94,8 +94,6 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
 
     async def _show_config_form(self, user_input):
         """Show the configuration form to edit location data."""
-        _LOGGER.info("%r", self._errors)
-
         data_schema = create_schema(user_input)
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(data_schema), errors=self._errors
@@ -108,11 +106,11 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
         """
         return self.async_create_entry(title="configuration.yaml", data={})
 
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry):
-        """Get the options flow for this handler."""
-        return AvfallsorOptionsHandler(config_entry)
+    # @staticmethod
+    # @callback
+    # def async_get_options_flow(config_entry):
+    #     """Get the options flow for this handler."""
+    #     return AvfallsorOptionsHandler(config_entry)
 
 
 class AvfallsorOptionsHandler(config_entries.OptionsFlow):
@@ -133,7 +131,7 @@ class AvfallsorOptionsHandler(config_entries.OptionsFlow):
         )
 
     async def async_step_edit(self, user_input):
-
+        # edit does not work.
         if user_input is not None:
             gbt = []
             for key, value in dict(user_input).items():
