@@ -49,6 +49,8 @@ def to_dt(s):
     if not re.search(r"\d{4}", s):
         s = "%s %s" % (s, date.today().year)
 
+    s = s.capitalize()
+
     for key, value in nor_days.items():
         if key.lower() in s.lower():
             s = s.replace(key, value)
@@ -85,24 +87,25 @@ def parse_tomme_kalender(text):
     tomme_days["tomme_day"] = tomme_day
     tomme_day_nr = list(nor_days.keys()).index(tomme_day)
     for li in tmk:
-        if "grønn" in li.img.get("alt", ""):
-            tomme_days["paper"].append(to_dt(li.text.strip()))
-            tomme_days["plastic"].append(to_dt(li.text.strip()))
-        elif "glass" in li.img.get("alt", ""):
-            tomme_days["metal"].append(to_dt(li.text.strip()))
-        # Grab the tomme exceptions
-        if "tømmes" in li.text:
-            for item in li.select("img"):
-                old, new = li.text.strip().split("tømmes")
-                if "Bio" in item["src"]:
-                    exceptions["bio"].append((to_dt(old), to_dt(new)))
-                elif "Rest" in item["src"]:
-                    exceptions["rest"].append((to_dt(old), to_dt(new)))
-                elif "Grønn" in item["src"]:
-                    exceptions["paper"].append((to_dt(old), to_dt(new)))
-                    exceptions["plastic"].append((to_dt(old), to_dt(new)))
-                elif "glass" in item["src"]:
-                    exceptions["metal"].append((to_dt(old), to_dt(new)))
+        if li.has_attr("img"):
+            if "grønn" in li.img.get("alt", ""):
+                tomme_days["paper"].append(to_dt(li.text.strip()))
+                tomme_days["plastic"].append(to_dt(li.text.strip()))
+            elif "glass" in li.img.get("alt", ""):
+                tomme_days["metal"].append(to_dt(li.text.strip()))
+            # Grab the tomme exceptions
+            if "tømmes" in li.text:
+                for item in li.select("img"):
+                    old, new = li.text.strip().split("tømmes")
+                    if "Bio" in item["src"]:
+                        exceptions["bio"].append((to_dt(old), to_dt(new)))
+                    elif "Rest" in item["src"]:
+                        exceptions["rest"].append((to_dt(old), to_dt(new)))
+                    elif "Grønn" in item["src"]:
+                        exceptions["paper"].append((to_dt(old), to_dt(new)))
+                        exceptions["plastic"].append((to_dt(old), to_dt(new)))
+                    elif "glass" in item["src"]:
+                        exceptions["metal"].append((to_dt(old), to_dt(new)))
 
     # Lets get all the days for the year.
     today = date.today()
