@@ -87,7 +87,7 @@ def parse_tomme_kalender(text):
     tomme_days["tomme_day"] = tomme_day
     tomme_day_nr = list(nor_days.keys()).index(tomme_day)
     for li in tmk:
-        if li.has_attr("img"):
+        if hasattr(li, "img"):
             if "grønn" in li.img.get("alt", ""):
                 tomme_days["paper"].append(to_dt(li.text.strip()))
                 tomme_days["plastic"].append(to_dt(li.text.strip()))
