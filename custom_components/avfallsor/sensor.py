@@ -1,24 +1,18 @@
 import logging
-
 from datetime import datetime, timedelta
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.util import Throttle
-import homeassistant.helpers.config_validation as cv
+from homeassistant.const import ATTR_ATTRIBUTION
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity import Entity
-from homeassistant.const import ATTR_ATTRIBUTION
+from homeassistant.util import Throttle
 
 from . import DOMAIN, garbage_types
-from .utils import (
-    find_address,
-    find_address_from_lat_lon,
-    to_dt,
-    find_next_garbage_pickup,
-    parse_tomme_kalender,
-)
-
+from .utils import (find_address, find_address_from_lat_lon, find_id,
+                    find_id_from_lat_lon, find_next_garbage_pickup,
+                    parse_tomme_kalender, to_dt)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -126,43 +120,40 @@ class AvfallSorData:
         self.client = client
         self._data = {}
         self._last_update = None
-        self._grbrstr = None
         self._lat = lat
         self._lon = lon
         self._friendly_name = None
+        self._grbrstr = ""
 
     async def find_street_id(self):
         """Helper to get get the correct info with the least possible setup
 
            Find the info using different methods where the prios are:
-           1. streetid and municipality
+           1. streetid
            2. address
            3. lat and lon set in ha config when this was setup.
 
         """
-        if not len(self._street_id) and not len(self._municipality):
-            if self._address and self._grbrstr is None:
-                result = await find_address(self._address, self.client)
+        if not len(self._street_id):
+            if self._address:
+                result = await find_id(self._address, self.client)
                 if result:
-                    self._grbrstr = result
+                    self._street_id = result
                     return
-            if self._lat and self._lon and self._grbrstr is None:
-                result = await find_address_from_lat_lon(
+            if self._lat and self._lon and self._street_id is None:
+                result = await find_id_from_lat_lon(
                     self._lat, self._lon, self.client
                 )
                 if result:
-                    self._grbrstr = result
+                    self._street_id = result
                     return
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     async def _update(self):
         _LOGGER.info("Fetching stuff for AvfallSorData")
         await self.find_street_id()
-        if self._street_id and self._municipality:
-            url = f"https://avfallsor.no/tommekalender/?id={self._street_id}&kommune={self._municipality}"
-        elif self._grbrstr:
-            # This seems to redirect to the url above.
-            url = f"https://avfallsor.no/tommekalender/?gbnr={self._grbrstr}.&searchString=&mnr=&type=adrSearchBtn&pappPapirPlast=true&glassMetall=true"
+        if self._street_id:
+            url = f"https://avfallsor.no/henting-av-avfall/finn-hentedag/{self._street_id}/"
         else:
             return
         _LOGGER.debug('Fetching data from %s', url)
@@ -258,7 +249,7 @@ class AvfallSor(Entity):
         }
 
     @property
-    def unit(self)-> int:
+    def unit(self) -> int:
         """Unit"""
         return int
 

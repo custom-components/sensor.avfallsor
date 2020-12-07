@@ -4,7 +4,6 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
 
-
 DOMAIN = "avfallsor"
 NAME = DOMAIN
 VERSION = "0.0.1"

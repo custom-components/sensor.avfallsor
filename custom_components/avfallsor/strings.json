@@ -6,9 +6,9 @@
                 "title": "Avfallsor",
                 "description": "Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
-                    "address": "Gatenavn husnummer, Stedsnavn",
+                    "address": "Gatenavn husnummer",
                     "municipality": "municipality",
-                    "street_id": "Finn id på https://avfallsor.no/tommekalender/",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
                     "mixed": "mixed",
@@ -19,9 +19,9 @@
                 "title": "Avfallsor",
                 "description": "Edit Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
-                    "address": "Gatenavn husnummer, Stedsnavn",
+                    "address": "Gatenavn husnummer",
                     "municipality": "municipality",
-                    "street_id": "Finn id på https://avfallsor.no/tommekalender/",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
                     "mixed": "mixed",
@@ -43,7 +43,7 @@
                 "data": {
                     "address": "Gatenavn husnummer, Stedsnavn",
                     "municipality": "municipality",
-                    "street_id": "Finn id på https://avfallsor.no/tommekalender/",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
                     "mixed": "mixed",
