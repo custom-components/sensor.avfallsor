@@ -26,11 +26,10 @@ Install using hacs or manual install
 Key | Type | Required | Default | Description
 -- | -- | -- | -- | --
 `address` | `string` | `False` | `""` | Address for garbage pickup
-`municipality` | `string` | `False` | `""` | Name of your 
-`street_id` | `string` | `False` | `""` | Go to https://avfallsor.no/tommekalender/ enter the address and the hour number, press "vis tømmekalender" after that you get redirect to url that looks something like this: ```https://avfallsor.no/tommekalender/?id=12345&kommune=Kristiansand``` grab the id and the kommune in the url.
+`street_id` | `string` | `False` | `""` | Go to https://avfallsor.no/henting-av-avfall/finn-hentedag/ enter the address and the hour number, select your adresse in the dropdown. After that you will be redirected to a url that look like: ```https://avfallsor.no/henting-av-avfall/finn-hentedag/c7b62b91-1f99-41a7-927d-5c3dc91805ca/``` grab the hash at the end.
 
 The sensor tries to find the your address (to find the pickup dates for your address) in this order:
-1. `street_id` and `municipality`
+1. `street_id`
 2. `address`
 3. Lat and lon that you entered when you setup home assistant.
 
@@ -46,8 +45,7 @@ Full example.
 sensor:
 - platform: avfallsor
   address: "Kongeveien 1, Kristiansand"
-  municipality: "Kristiansand"
-  street_id: 12345
+  street_id: c7b62b91-1f99-41a7-927d-5c3dc91805ca
 ```
 
 ### Integrations
