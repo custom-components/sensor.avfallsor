@@ -1,5 +1,4 @@
 """Adds config flow for nordpool."""
-import json
 import logging
 from collections import OrderedDict
 
@@ -17,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def create_schema(entry, option=False):
     """Create a default schema based on if a option or if settings
-       is already filled out.
+    is already filled out.
     """
 
     default_garbage_types_enabled = []

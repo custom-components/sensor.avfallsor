@@ -90,10 +90,10 @@ class AvfallSorData:
     async def find_street_id(self):
         """Helper to get get the correct info with the least possible setup
 
-           Find the info using different methods where the prios are:
-           1. streetid
-           2. address
-           3. lat and lon set in ha config when this was setup.
+        Find the info using different methods where the prios are:
+        1. streetid
+        2. address
+        3. lat and lon set in ha config when this was setup.
 
         """
         # use
@@ -105,9 +105,7 @@ class AvfallSorData:
                     self._street_id = result
                     return
             if self._lat and self._lon and self._street_id is None:
-                result = await find_id_from_lat_lon(
-                    self._lat, self._lon, self.client
-                )
+                result = await find_id_from_lat_lon(self._lat, self._lon, self.client)
                 if result:
                     self._street_id = result
                     return
@@ -186,7 +184,9 @@ class AvfallSor(Entity):
     @property
     def unique_id(self) -> str:
         """Return the name of the sensor."""
-        return f"avfallsor_{self._garbage_type}_{self.data._street_id.replace('-', '_')}"
+        return (
+            f"avfallsor_{self._garbage_type}_{self.data._street_id.replace('-', '_')}"
+        )
 
     @property
     def name(self) -> str:

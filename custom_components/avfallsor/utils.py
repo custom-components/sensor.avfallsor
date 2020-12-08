@@ -8,8 +8,6 @@ import voluptuous as vol
 from bs4 import BeautifulSoup
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from . import nor_days
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -87,9 +85,9 @@ def parse_tomme_kalender(text):
             dato = datetime.strptime(dato[0], "%Y-%m-%d")
 
         # This should probablybe dropped, we can handle this in the sensor anyway.
-        if tommedag is None and avfall_type == "Restavfall":
-            tomme_day_nr = dato.weekday()
-            tomme_days["tomme_day"] = list(nor_days.values())[tomme_day_nr]
+        # if tommedag is None and avfall_type == "Restavfall":
+        #    tomme_day_nr = dato.weekday()
+        #    tomme_days["tomme_day"] = list(nor_days.values())[tomme_day_nr]
 
         # This is combined in the data, but its splitted in two
         # sensors since it two "bins"
@@ -202,7 +200,9 @@ async def find_id(address, client):
 
 async def get_tommeplan_page(street_id, client) -> str:
     """Get the tommeplan page as text"""
-    url = f"https://avfallsor.no/henting-av-avfall/finn-hentedag/{street_id.strip('/')}/"
+    url = (
+        f"https://avfallsor.no/henting-av-avfall/finn-hentedag/{street_id.strip('/')}/"
+    )
     _LOGGER.debug("Getting the tomme plan page %s", url)
     resp = await client.get(url)
     if resp.status == 200:
@@ -228,9 +228,7 @@ async def find_address_from_lat_lon(lat, lon, client):
             _LOGGER.debug(
                 "Got adresse %s from lat %s lon %s", res.get("adressetekst"), lat, lon
             )
-            return "%s" % (
-                res["adressetekstutenadressetilleggsnavn"]
-            )
+            return "%s" % (res["adressetekstutenadressetilleggsnavn"])
     elif resp.status == 400:
         result = await resp.json()
         _LOGGER.info("Api returned 400, error %s", result.get("message", ""))
