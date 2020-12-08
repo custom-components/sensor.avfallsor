@@ -1,21 +1,21 @@
+import json
 import logging
-import re
+import pprint
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from difflib import SequenceMatcher
 
 import voluptuous as vol
 from bs4 import BeautifulSoup
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from . import nor_days, nor_months
+from . import nor_days
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def check_settings(config, hass):
-    if not any(config.get(i) for i in ["street_id", "municipality"]):
-        _LOGGER.debug("street_id or municipality was not set config")
+    if not any(config.get(i) for i in ["street_id"]):
+        _LOGGER.debug("street_id was not set")
     else:
         return True
     if not config.get("address"):
@@ -41,32 +41,6 @@ def find_next_garbage_pickup(dates):
             return i
 
 
-def to_dt(s):
-    # if a year is missing we assume it is this year.
-    # this seems to only be a issue with the tomme exceptions.
-    if not re.search(r"\d{4}", s):
-        s = "%s %s" % (s, date.today().year)
-
-    s = s.capitalize()
-
-    for key, value in nor_days.items():
-        if key.lower() in s.lower():
-            s = s.replace(key, value)
-
-    for k, v in nor_months.items():
-        if k.lower() in s.lower():
-            s = s.replace(k, v)
-
-    return datetime.strptime(s.strip(), "%A %d. %b %Y")
-
-
-def longestSubstring(str1, str2):
-    """Not in use atm"""
-    seqMatch = SequenceMatcher(None, str1, str2)
-    match = seqMatch.find_longest_match(0, len(str1), 0, len(str2))
-    return match.size
-
-
 gb_map = {
     "rest": "Restavfall",
     "bio": "Bioavfall",
@@ -79,15 +53,14 @@ gb_map.update({v: k for k, v in gb_map.items()})
 
 def parse_tomme_kalender(text):
     tomme_days = defaultdict(list)
-    soup = BeautifulSoup(text, "html.parser")
+    # _LOGGER.debug("Used using as soup:\n\n %s", text)
+    soup = BeautifulSoup(text, "html5lib")
     today = date.today()
-
     tomme_days["metal"] = []
     tomme_days["paper"] = []
     tomme_days["rest"] = []
     tomme_days["bio"] = []
     tomme_days["plastic"] = []
-
 
     start_of_year = datetime(today.year, 1, 1)
     end_of_year = datetime(today.year, 12, 31)
@@ -112,10 +85,11 @@ def parse_tomme_kalender(text):
         ]
         if dato:
             dato = datetime.strptime(dato[0], "%Y-%m-%d")
+
+        # This should probablybe dropped, we can handle this in the sensor anyway.
         if tommedag is None and avfall_type == "Restavfall":
             tomme_day_nr = dato.weekday()
             tomme_days["tomme_day"] = list(nor_days.values())[tomme_day_nr]
-
 
         # This is combined in the data, but its splitted in two
         # sensors since it two "bins"
@@ -126,83 +100,45 @@ def parse_tomme_kalender(text):
             tomme_days[gb_map[avfall_type]].append(dato)
 
     # Skip calc for now as there are no exceptions yet.
+    # Let just see what the site looks like when after newyears.
+    # Maybe download the pdf and parse that if they limit the ammount
+    # of pickup days.
     # for i in range(int((end_of_year - start_of_year).days) + 1):
     #
     #    i_date = start_of_year + timedelta(days=i)
     #    if i_date.weekday() == tomme_day_nr:
     #        tomme_days["bio"].append(i_date)
     #        tomme_days["rest"].append(i_date)
+    _LOGGER.debug("%s", pprint.pformat(tomme_days, indent=4))
 
     return tomme_days
 
 
-def parse_tomme_kalender_old(text):
-    """Parse the avfallsør tømme kalender to a dict."""
+def check_tomme_kalender(data):
+    tomme_kalender = parse_tomme_kalender(data)
+
+    if not any(len(i) > 1 for i in tomme_kalender.values()):
+        _LOGGER.debug("No tømmekalender is available")
+        return False
+    return True
 
 
-    exceptions = defaultdict(list)
-    tomme_days = defaultdict(list)
-    soup = BeautifulSoup(text, "html.parser")
-    tmk = soup.select("ul.tmk > li")
-    tommeday_soup = soup.find(
-        text=re.compile(
-            r"Din tømmedag er: (Mandag|Tirsdag|Onsdag|Torsdag|Fredag|Lørdag|Søndag)",
-            re.IGNORECASE,
-        )
-    )
-    tomme_day = tommeday_soup.split(":")[1].strip()
-    tomme_days["tomme_day"] = tomme_day
-    tomme_day_nr = list(nor_days.keys()).index(tomme_day)
-    for li in tmk:
-        if hasattr(li, "img"):
-            if "grønn" in li.img.get("alt", ""):
-                tomme_days["paper"].append(to_dt(li.text.strip()))
-                tomme_days["plastic"].append(to_dt(li.text.strip()))
-            elif "glass" in li.img.get("alt", ""):
-                tomme_days["metal"].append(to_dt(li.text.strip()))
-            # Grab the tomme exceptions
-            if "tømmes" in li.text:
-                for item in li.select("img"):
-                    old, new = li.text.strip().split("tømmes")
-                    if "Bio" in item["src"]:
-                        exceptions["bio"].append((to_dt(old), to_dt(new)))
-                    elif "Rest" in item["src"]:
-                        exceptions["rest"].append((to_dt(old), to_dt(new)))
-                    elif "Grønn" in item["src"]:
-                        exceptions["paper"].append((to_dt(old), to_dt(new)))
-                        exceptions["plastic"].append((to_dt(old), to_dt(new)))
-                    elif "glass" in item["src"]:
-                        exceptions["metal"].append((to_dt(old), to_dt(new)))
-
-    # Lets get all the days for the year.
-    today = date.today()
-    start_of_year = datetime(today.year, 1, 1)
-    for i in range(0, 365):
-        i_date = start_of_year + timedelta(days=i)
-        if i_date.weekday() == tomme_day_nr:
-            tomme_days["bio"].append(i_date)
-            tomme_days["rest"].append(i_date)
-
-    # replace any exception from the normals tommedays
-    # this usually because of holydays etc.
-    if len(exceptions):
-        for k, v in exceptions.items():
-            for i in v:
-                for item in tomme_days.get(k, []):
-                    if i and i[0] == item:
-                        tomme_days[k].remove(item)
-                        tomme_days[k].append(i[1])
-
-    return tomme_days
-
-
-async def verify_that_we_can_find_adr(config, hass):
+async def verify_that_we_can_find_id(config, hass):
     client = async_get_clientsession(hass)
+
+    try:
+        # Check that we have some info we can use to find the tommeplan
+        # it might still fail if the user entered the wrong adresse etc.
+        check_settings(config, hass)
+    except vol.Invalid:
+        return False
+
     try:
         adr = await find_id(config.get("address"), client)
         if adr:
-            return True
+            return adr
     except:
+        _LOGGER.exception("Failed to find the id")
         pass
 
     try:
@@ -210,18 +146,10 @@ async def verify_that_we_can_find_adr(config, hass):
             hass.config.latitude, hass.config.longitude, client
         )
         if adr:
-            return True
+            return adr
     except:
+        _LOGGER.exception("Failed to find the id from lat lon")
         pass
-
-    try:
-        # This just to check the lat and lon, the other
-        # stuff is tested above.
-        chk = check_settings(config, hass)
-        if chk:
-            return True
-    except vol.Invalid:
-        return False
 
     return False
 
@@ -231,46 +159,63 @@ async def find_id(address, client):
     if not address:
         return
 
-    d = {"address": address}
+    # For some silly reason we can't seem to search for anything
+    # other then streetname hournumber letter, so we remove the municipality
+    # and check that against the label instead.
+    if "," in address:
+        cleaned_address = address.split(",")[0]
+    else:
+        cleaned_address = address
+
+    params = {"address": cleaned_address}
     url = "https://avfallsor.no/wp-json/addresses/v1/address"
-    resp = await client.get(url, params=d)
+    resp = await client.get(url, params=params)
+
+    _LOGGER.debug("Trying to find the id using url %s, params %s", url, params)
 
     if resp.status == 200:
         data = await resp.json()
 
+        _LOGGER.debug("Raw response:\n\n %s", json.dumps(data, indent=4))
+        # Api returns a empty list if we dont get a hit.
+        if isinstance(data, list):
+            _LOGGER.info("Didn't find address using %s", address)
+            return None
+
         if len(data) > 1:
             _LOGGER.warning(
-                "We got multiple adresses, consider extracting the id manually."
+                "We got multiple adresses, consider extracting the id manually or adding the municipality"
             )
 
         for key, value in data.items():
-            if value["value"].lower() == address.lower():
+            # To handle the old format
+            # Kongeveien 1, Kristiansand
+            if "," in address:
+                wanted_key = "label"
+            else:
+                wanted_key = "value"
+            if value[wanted_key].lower() == address.lower():
                 return value["href"].split("/")[-1]
 
+    return None
 
-async def find_address(address, client):
-    """not in use anymore"""
-    if not address:
-        return
 
-    d = {"searchstring": address}
-    url = "https://seeiendom.kartverket.no/api/soekEtterEiendom"
-    resp = await client.get(url, params=d)
-
+async def get_tommeplan_page(street_id, client) -> str:
+    """Get the tommeplan page as text"""
+    url = f"https://avfallsor.no/henting-av-avfall/finn-hentedag/{street_id.strip('/')}/"
+    _LOGGER.debug("Getting the tomme plan page %s", url)
+    resp = await client.get(url)
     if resp.status == 200:
-        result = await resp.json()
-        if len(result):
-            res = result[0]
-            _LOGGER.debug("Got %s", res["veiadresse"])
-            res = "%s" % res["veiadresse"].split(",")[0]
-            return res
-        else:
-            _LOGGER.info("Failed to find the address %s", address)
+        text = await resp.text()
+        return text
 
 
 async def find_address_from_lat_lon(lat, lon, client):
+    """Find the adress using lat lon, as a address is required to find the id."""
     if lat is None or lon is None:
         return
+
+    _LOGGER.debug("Trying to find the address using lat %s lon %s", lat, lon)
 
     url = f"https://ws.geonorge.no/adresser/v1/punktsok?lon={lon}&lat={lat}&radius=20"
     resp = await client.get(url)
@@ -283,16 +228,16 @@ async def find_address_from_lat_lon(lat, lon, client):
             _LOGGER.debug(
                 "Got adresse %s from lat %s lon %s", res.get("adressetekst"), lat, lon
             )
-            # return '%s.%s.%s.%s' % (res["kommunenummer"], res["gardsnummer"], res["bruksnummer"], res["festenummer"])
             return "%s" % (
                 res["adressetekstutenadressetilleggsnavn"]
             )
     elif resp.status == 400:
         result = await resp.json()
-        _LOGGER.info("Api returned 400, error %r", result.get("message", ""))
+        _LOGGER.info("Api returned 400, error %s", result.get("message", ""))
         raise ValueError("lat and lon is not in Norway.")
 
 
 async def find_id_from_lat_lon(lat, lon, client):
-    adress = await find_address_from_lat_lon(lat, lon, client)
-    return await find_id(adress, client)
+    """Find the tommeplan if using lat and lon."""
+    address = await find_address_from_lat_lon(lat, lon, client)
+    return await find_id(address, client)

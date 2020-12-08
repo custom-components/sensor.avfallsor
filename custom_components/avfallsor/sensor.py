@@ -10,9 +10,9 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
 
 from . import DOMAIN, garbage_types
-from .utils import (find_address, find_address_from_lat_lon, find_id,
-                    find_id_from_lat_lon, find_next_garbage_pickup,
-                    parse_tomme_kalender, to_dt)
+from .utils import (check_settings, find_id, find_id_from_lat_lon,
+                    find_next_garbage_pickup, get_tommeplan_page,
+                    parse_tomme_kalender)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +21,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional("address", default=""): cv.string,
         vol.Optional("street_id", default=""): cv.string,
-        vol.Optional("municipality", default=""): cv.string,
         vol.Optional("garbage_types", default=garbage_types): list,
     }
 )
@@ -30,38 +29,15 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 MIN_TIME_BETWEEN_UPDATES = timedelta(weeks=4)
 
 
-def check_settings(config, hass):
-    if not any(config.get(i) for i in ["street_id", "municipality"]):
-        _LOGGER.debug("street_id or municipality was not set config")
-    else:
-        return True
-    if not config.get("address"):
-        _LOGGER.debug("address was not set")
-    else:
-        return True
-
-    if not hass.config.latitude or not hass.config.longitude:
-        _LOGGER.debug("latitude and longitude is not set in ha settings.")
-    else:
-        return True
-
-    raise vol.Invalid("Missing settings to setup the sensor.")
-
-
-async def async_setup_platform(
-    hass, config_entry, async_add_devices, discovery_info=None
-):
-    """Setup sensor platform for the ui"""
+async def dry_setup(hass, config_entry, async_add_devices):
     config = config_entry
     street_id = config.get("street_id")
-    municipality = config.get("municipality")
     address = config.get("address")
 
     check_settings(config, hass)
     data = AvfallSorData(
         address,
         street_id,
-        municipality,
         hass.config.latitude,
         hass.config.longitude,
         async_get_clientsession(hass),
@@ -74,32 +50,20 @@ async def async_setup_platform(
         sensors.append(sensor)
 
     async_add_devices(sensors)
+
+
+async def async_setup_platform(
+    hass, config_entry, async_add_devices, discovery_info=None
+):
+    """Setup sensor platform for the ui"""
+    await dry_setup(hass, config_entry, async_add_devices)
     return True
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
-    street_id = config.get("street_id")
-    municipality = config.get("municipality")
-    address = config.get("address")
-    check_settings(config, hass)
-    data = AvfallSorData(
-        address,
-        street_id,
-        municipality,
-        hass.config.latitude,
-        hass.config.longitude,
-        async_get_clientsession(hass),
-    )
-    await data.update()
-
-    sensors = []
-    for gb_type in config.get("garbage_types", garbage_types):
-        sensor = AvfallSor(data, gb_type)
-        sensors.append(sensor)
-
-    async_add_devices(sensors)
+    await dry_setup(hass, config, async_add_devices)
     return True
 
 
@@ -113,17 +77,15 @@ async def async_remove_entry(hass, config_entry):
 
 
 class AvfallSorData:
-    def __init__(self, address, street_id, municipality, lat, lon, client):
+    def __init__(self, address, street_id, lat, lon, client):
         self._address = address
         self._street_id = street_id
-        self._municipality = municipality
         self.client = client
         self._data = {}
         self._last_update = None
         self._lat = lat
         self._lon = lon
         self._friendly_name = None
-        self._grbrstr = ""
 
     async def find_street_id(self):
         """Helper to get get the correct info with the least possible setup
@@ -134,6 +96,8 @@ class AvfallSorData:
            3. lat and lon set in ha config when this was setup.
 
         """
+        # use
+        # verify_that_we_can_find_id
         if not len(self._street_id):
             if self._address:
                 result = await find_id(self._address, self.client)
@@ -150,16 +114,14 @@ class AvfallSorData:
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     async def _update(self):
-        _LOGGER.info("Fetching stuff for AvfallSorData")
+        _LOGGER.debug("Fetching stuff for AvfallSorData")
         await self.find_street_id()
         if self._street_id:
-            url = f"https://avfallsor.no/henting-av-avfall/finn-hentedag/{self._street_id}/"
+            text = await get_tommeplan_page(self._street_id, self.client)
         else:
             return
-        _LOGGER.debug('Fetching data from %s', url)
-        resp = await self.client.get(url)
-        if resp.status == 200:
-            text = await resp.text()
+
+        if text:
             self._data = parse_tomme_kalender(text)
             self._last_update = datetime.now()
 
@@ -224,7 +186,7 @@ class AvfallSor(Entity):
     @property
     def unique_id(self) -> str:
         """Return the name of the sensor."""
-        return f"avfallsor_{self._garbage_type}_{self.data._street_id or self.data._grbrstr}"
+        return f"avfallsor_{self._garbage_type}_{self.data._street_id.replace('-', '_')}"
 
     @property
     def name(self) -> str:

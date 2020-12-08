@@ -6,9 +6,8 @@
                 "title": "Avfallsor",
                 "description": "Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
-                    "address": "Gatenavn husnummer, Stedsnavn",
-                    "municipality": "municipality",
-                    "street_id": "Finn id på https://avfallsor.no/tommekalender/",
+                    "address": "Streetname number letter, municipality",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
                     "mixed": "mixed",
@@ -20,9 +19,8 @@
                 "title": "Avfallsor",
                 "description": "Edit Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
-                    "address": "Gatenavn husnummer, Stedsnavn",
-                    "municipality": "municipality",
-                    "street_id": "Finn id på https://avfallsor.no/tommekalender/",
+                    "address": "Streetname number letter, municipality",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
                     "mixed": "mixed",
@@ -33,19 +31,20 @@
 
         },
         "error": {
-            "missing_addresse": "Could not find the adresse",
-            "wrong_lat_lon": "lat and lon is wrong"
+            "invalid_address": "Invalid adresse, use streetname number letter, kommunenavn",
+            "wrong_lat_lon": "Latitude and/or longtitude is outside Norway.",
+            "nothing_worked": "Failed to find the required info, provide street_id, a adresse or set lat, lon is ha config.",
+            "no_valid_settings": "No valid settings, provide street_id, a adresse or set lat, lon is ha config."
         }
     },
     "options": {
         "step": {
             "edit": {
-                "title": "test 1234",
-                "description": "random",
+                "title": "Avfallsor",
+                "description": "Edit Setup a avfallsor sensor, nothing is needed if lon and lat is set.",
                 "data": {
-                    "address": "Gatenavn husnummer, Stedsnavn",
-                    "municipality": "municipality",
-                    "street_id": "Finn id på https://avfallsor.no/tommekalender/",
+                    "address": "Streetname number letter, municipality",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
                     "mixed": "mixed",
@@ -55,8 +54,10 @@
             }
         },
         "error": {
-            "missing_addresse": "Could not find the adresse",
-            "wrong_lat_lon": "lat and lon is wrong"
+            "invalid_address": "Invalid adresse, use streetname number letter, municipality",
+            "wrong_lat_lon": "Latitude and/or longtitude is outside Norway.",
+            "nothing_worked": "Failed to find the required info, provide street_id, a adresse or set lat, lon is ha config.",
+            "no_valid_settings": "No valid settings, provide street_id, a adresse or set lat, lon is ha config."
         }
     }
 }

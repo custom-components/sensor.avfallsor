@@ -1,0 +1,63 @@
+{
+    "config": {
+        "title": "Avfallsor",
+        "step": {
+            "user": {
+                "title": "Avfallsor",
+                "description": "Setup avfallsør sensor, hvis lengde og bredde grader er satt, klikk ok.",
+                "data": {
+                    "address": "Gatenavn husnummer bokstav, Kommunenavn",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
+                    "paper": "papir",
+                    "bio": "matavfall",
+                    "mixed": "restavfall",
+                    "metal": "metalavfall",
+                    "plastic": "plastikkavfall"
+                }
+            },
+            "edit": {
+                "title": "Avfallsor",
+                "description": "Setup avfallsør sensor, hvis lengde og bredde grader er satt, klikk ok.",
+                "data": {
+                    "address": "Gatenavn husnummer bokstav, Kommunenavn",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
+                    "paper": "papir",
+                    "bio": "matavfall",
+                    "mixed": "restavfall",
+                    "metal": "metalavfall",
+                    "plastic": "plastikkavfall"
+                }
+            }
+
+        },
+        "error": {
+            "invalid_address": "Ugyldig adresse, Eksempel: Kongeveien 1 A, Kristiansand",
+            "wrong_lat_lon": "Lengde og breddegrade er ikke i Norge",
+            "nothing_worked": "Manglende info for å finne tømmeplanen, angi gate id, gate adresse eller set lengde og breddegrader i hass innstillinger",
+            "no_valid_settings": "Manglende info for å finne tømmeplanen, angi gate id, gate adresse eller set lengde og breddegrader i hass innstillinger"
+        }
+    },
+    "options": {
+        "step": {
+            "edit": {
+                "title": "Avfallsor",
+                "description": "Setup avfallsør sensor, hvis lengde og bredde grader er satt, klikk ok.",
+                "data": {
+                    "address": "Gatenavn husnummer bokstav, Kommunenavn",
+                    "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
+                    "paper": "papir",
+                    "bio": "matavfall",
+                    "mixed": "restavfall",
+                    "metal": "metalavfall",
+                    "plastic": "plastikkavfall"
+                }
+            }
+        },
+        "error": {
+            "invalid_address": "Ugyldig adresse, Eksempel: Kongeveien 1 A, Kristiansand",
+            "wrong_lat_lon": "Lengde og breddegrade er ikke i Norge",
+            "nothing_worked": "Manglende info for å finne tømmeplanen, angi gate id, gate adresse eller set lengde og breddegrader i hass innstillinger",
+            "no_valid_settings": "Manglende info for å finne tømmeplanen, angi gate id, gate adresse eller set lengde og breddegrader i hass innstillinger"
+        }
+    }
+}

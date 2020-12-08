@@ -1,15 +1,16 @@
 """Adds config flow for nordpool."""
+import json
 import logging
 from collections import OrderedDict
 
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import callback
-
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from . import DOMAIN, garbage_types
-from .utils import verify_that_we_can_find_adr
+from .utils import (check_settings, check_tomme_kalender, find_id,
+                    find_id_from_lat_lon, get_tommeplan_page)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,13 +26,11 @@ def create_schema(entry, option=False):
         # We use .get here incase some of the texts gets changed.
         default_adress = entry.data.get("address", "")
         default_street_id = entry.data.get("street_id", "")
-        default_municipality = entry.data.get("municipality", "")
         for z in entry.data.get("garbage_types", garbage_types):
             default_garbage_types_enabled.append(z)
     else:
         default_adress = ""
         default_street_id = ""
-        default_municipality = ""
         default_garbage_types_enabled = garbage_types
 
     data_schema = OrderedDict()
@@ -40,9 +39,6 @@ def create_schema(entry, option=False):
     ] = str
     data_schema[
         vol.Optional("street_id", default=default_street_id, description="street_id")
-    ] = str
-    data_schema[
-        vol.Optional("municipality", default=default_municipality, description="municipality")
     ] = str
 
     for gbt in garbage_types:
@@ -57,8 +53,58 @@ def create_schema(entry, option=False):
     return data_schema
 
 
-@config_entries.HANDLERS.register(DOMAIN)
-class AvfallSorFlowHandler(config_entries.ConfigFlow):
+class Mixin:
+    async def test_setup(self, user_input):
+        client = async_get_clientsession(self.hass)
+
+        try:
+            check_settings(user_input, self.hass)
+        except ValueError:
+            self._errors["base"] = "no_valid_settings"
+            return False
+
+        # This is what we really need.
+        street_id = None
+
+        if user_input.get("street_id"):
+            street_id = user_input.get("street_id")
+
+        # We only want to skip this if its blank, this is not required
+        # if we got other info we can use.
+        if user_input.get("address") is not None and street_id is None:
+            street_id_from_adr = await find_id(user_input.get("address"), client)
+            if street_id_from_adr is not None:
+                street_id = street_id_from_adr
+            else:
+                self._errors["base"] = "invalid address"
+
+        if street_id is None:
+            try:
+                street_id_from_lat_lon = await find_id_from_lat_lon(
+                    self.hass.config.latitude, self.hass.config.longitude, client
+                )
+
+                if street_id_from_lat_lon is not None:
+                    street_id = street_id_from_lat_lon
+            except ValueError:
+                self._errors["base"] = "wrong_lat_lon"
+
+        if street_id is not None:
+            # We need to parse this as the site returns a generic site without
+            # any tømmeplan if the id invalid
+            text = await get_tommeplan_page(street_id, client)
+            if check_tomme_kalender(text) is True:
+                return True
+            else:
+                self._errors["base"] = "invalid_street_id"
+                return False
+
+        else:
+            self._errors["base"] = "nothing_worked"
+            return False
+
+
+class AvfallSorFlowHandler(Mixin, config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for Blueprint."""
 
     VERSION = 1
@@ -82,13 +128,10 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
 
             if len(gbt):
                 user_input["garbage_types"] = gbt
-            # Think the title is wrong..
 
-            adr = await verify_that_we_can_find_adr(user_input, self.hass)
+            adr = await self.test_setup(user_input)
             if adr:
                 return self.async_create_entry(title="avfallsor", data=user_input)
-            else:
-                self._errors["base"] = "missing_addresse"
 
         return await self._show_config_form(user_input)
 
@@ -108,12 +151,12 @@ class AvfallSorFlowHandler(config_entries.ConfigFlow):
 
     # @staticmethod
     # @callback
-    # def async_get_options_flow(config_entry):
+    # def async_get_options_flow(config_entry):  # TODO
     #     """Get the options flow for this handler."""
     #     return AvfallsorOptionsHandler(config_entry)
 
 
-class AvfallsorOptionsHandler(config_entries.OptionsFlow):
+class AvfallsorOptionsHandler(config_entries.OptionsFlow, Mixin):
     """Now this class isnt like any normal option handlers.. as hav devsoption seems think options is
     #  supposed to be EXTRA options, i disagree, a user should be able to edit anything.."""
 
@@ -142,8 +185,8 @@ class AvfallsorOptionsHandler(config_entries.OptionsFlow):
             if len(gbt):
                 user_input["garbage_types"] = gbt
 
-            adr = await verify_that_we_can_find_adr(user_input, self.hass)
-            if adr:
+            ok = await self.test_setup(user_input)
+            if ok:
                 self.hass.config_entries.async_update_entry(
                     self.config_entry, data=user_input
                 )
