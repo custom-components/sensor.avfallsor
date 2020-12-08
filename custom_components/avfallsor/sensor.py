@@ -199,6 +199,7 @@ class AvfallSor(Entity):
             "next garbage pickup": self.next_garbage_pickup,
             ATTR_ATTRIBUTION: "avfallsør",
             "last update": self.data._last_update,
+            "garbage_type": self._garbage_type
         }
 
     @property
