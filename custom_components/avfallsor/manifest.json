@@ -5,5 +5,5 @@
   "dependencies": [],
   "config_flow": true,
   "codeowners": ["@hellowlol"],
-  "requirements": ["beautifulsoup4"]
+  "requirements": ["beautifulsoup4", "html5lib"]
 }
