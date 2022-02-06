@@ -193,7 +193,7 @@ class AvfallSor(Entity):
         return self.unique_id
 
     @property
-    def device_state_attributes(self) -> dict:
+    def extra_state_attributes(self) -> dict:
         """Return the state attributes."""
         return {
             "next garbage pickup": self.next_garbage_pickup,
