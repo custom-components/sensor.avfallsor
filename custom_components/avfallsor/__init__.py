@@ -6,7 +6,7 @@ from homeassistant.core import Config, HomeAssistant
 
 DOMAIN = "avfallsor"
 NAME = DOMAIN
-VERSION = "0.0.4"
+VERSION = "0.0.5"
 ISSUEURL = "https://github.com/hellowlol/sensor.avfallsor/issues"
 
 STARTUP = """
