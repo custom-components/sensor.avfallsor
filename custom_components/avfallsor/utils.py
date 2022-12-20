@@ -42,8 +42,8 @@ def find_next_garbage_pickup(dates):
 gb_map = {
     "rest": "Restavfall",
     "bio": "Bioavfall",
-    "paper": "Papir/papp",
-    "plastic": "Papir/papp",
+    "paper": "Papp, papir og plastemballasje",
+    "plastic": "Papp, papir og plastemballasje",
     "metal": "Glass- og metallemballasje",
 }
 gb_map.update({v: k for k, v in gb_map.items()})
