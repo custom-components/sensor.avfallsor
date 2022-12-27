@@ -91,7 +91,8 @@ def parse_tomme_kalender(text):
 
         # This is combined in the data, but its splitted in two
         # sensors since it two "bins"
-        if gb_map[avfall_type] in ["plastic", "paper"]:
+        l_at = avfall_type.lower()
+        if "papir" in l_at or "plast" in l_at:
             tomme_days["plastic"].append(dato)
             tomme_days["paper"].append(dato)
         else:
@@ -107,7 +108,7 @@ def parse_tomme_kalender(text):
     #    if i_date.weekday() == tomme_day_nr:
     #        tomme_days["bio"].append(i_date)
     #        tomme_days["rest"].append(i_date)
-    _LOGGER.debug("%s", pprint.pformat(tomme_days, indent=4))
+    #_LOGGER.debug("%s", pprint.pformat(tomme_days, indent=4))
 
     return tomme_days
 
