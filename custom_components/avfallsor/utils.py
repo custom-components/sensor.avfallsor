@@ -18,8 +18,18 @@ weekday_map = {
     "torsdager": 3,  # Thursday
     "fredager": 4,  # Friday
     "lørdager": 5,  # Saturday
-    "søndager": 6   # Sunday
+    "søndager": 6,  # Sunday
 }
+
+gb_map = {
+    "mixed": "Restavfall",
+    "bio": "Matavfall",
+    "paper": "Papp og papir",
+    "plastic": "Plastemballasje",
+    "metal": "Glass- og metallemballasje",
+}
+gb_map.update({v: k for k, v in gb_map.items()})
+
 
 def get_next_weekdaydate(weekday_name):
 
@@ -41,6 +51,7 @@ def get_next_weekdaydate(weekday_name):
     # Calculate the next occurrence of the desired weekday
     next_weekday_date = today + timedelta(days=days_ahead)
     return next_weekday_date
+
 
 def check_settings(config, hass):
     if not any(config.get(i) for i in ["street_id"]):
@@ -69,33 +80,22 @@ def find_next_garbage_pickup(dates):
         if i.date() >= today:
             return i
 
-gb_map = {
-    "rest": "Restavfall",
-    "bio": "Matavfall",
-    "paper": "Papp og papir",
-    "plastic": "Plastemballasje",
-    "metal": "Glass- og metallemballasje",
-}
-gb_map.update({v: k for k, v in gb_map.items()})
-
 
 def parse_tomme_kalender(text):
     tomme_days = defaultdict(list)
 
     soup = BeautifulSoup(text, "html.parser")
 
-
     forms = soup.find_all("form", class_="info-boxes-box-form")
 
     # Create a dictionary to store the description and dtstart values
     neste_hentedager = {}
 
-
     # Metall, papp- og papir and plast dates are all found inside a form elements
     for form in forms:
         description_input = form.find("input", {"name": "description"})
         dtstart_input = form.find("input", {"name": "dtstart"})
-        
+
         if description_input and dtstart_input:
             description = description_input.get("value")
             dtstart = dtstart_input.get("value")
@@ -104,9 +104,8 @@ def parse_tomme_kalender(text):
     additional_waste_classes = {
         # These values are the class names of the divs on Avfallsors website
         "Restavfall": "info-boxes-box info-boxes-box--9011",
-        "Matavfall": "info-boxes-box info-boxes-box--1111"
+        "Matavfall": "info-boxes-box info-boxes-box--1111",
     }
-
 
     # Restavfall and matavfall are found by reading the content of a span
     # in a specific div
@@ -119,15 +118,23 @@ def parse_tomme_kalender(text):
                 # Check if any weekday is in the text
                 for weekday in weekday_map:
                     if weekday in text:
-                        neste_hentedager[waste_type] = get_next_weekdaydate(weekday).replace(hour=0, minute=0, second=0, microsecond=0)
+                        neste_hentedager[waste_type] = get_next_weekdaydate(
+                            weekday
+                        ).replace(hour=0, minute=0, second=0, microsecond=0)
                         break
         else:
-            _LOGGER.debug(f"Div with class {waste_class} for {waste_type} not found on avfallsor.no.")
+            _LOGGER.debug(
+                f"Div with class {waste_class} for {waste_type} not found on avfallsor.no."
+            )
 
     # Loop over the first 5 keys in gb_map
     for waste_type in list(gb_map)[:5]:
         # Get the date of next pick-up day if it exists
-        date = neste_hentedager[gb_map[waste_type]] if gb_map[waste_type] in neste_hentedager else None
+        date = (
+            neste_hentedager[gb_map[waste_type]]
+            if gb_map[waste_type] in neste_hentedager
+            else None
+        )
         tomme_days[waste_type] = [date]
 
     # _LOGGER.debug(tomme_days)
