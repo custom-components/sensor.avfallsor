@@ -69,12 +69,11 @@ def find_next_garbage_pickup(dates):
         if i.date() >= today:
             return i
 
-
 gb_map = {
     "rest": "Restavfall",
-    "bio": "Bioavfall",
-    "paper": "Papir/papp",
-    "plastic": "Papir/papp",
+    "bio": "Matavfall",
+    "paper": "Papp og papir",
+    "plastic": "Plastemballasje",
     "metal": "Glass- og metallemballasje",
 }
 gb_map.update({v: k for k, v in gb_map.items()})
@@ -82,8 +81,6 @@ gb_map.update({v: k for k, v in gb_map.items()})
 
 def parse_tomme_kalender(text):
     tomme_days = defaultdict(list)
-    # _LOGGER.debug("Used using as soup:\n\n %s", text)
-    #soup = BeautifulSoup(text, "html5lib")
 
     soup = BeautifulSoup(text, "html.parser")
 
@@ -105,10 +102,14 @@ def parse_tomme_kalender(text):
             neste_hentedager[description] = datetime.strptime(dtstart, "%Y-%m-%d")
 
     additional_waste_classes = {
+        # These values are the class names of the divs on Avfallsors website
         "Restavfall": "info-boxes-box info-boxes-box--9011",
         "Matavfall": "info-boxes-box info-boxes-box--1111"
     }
 
+
+    # Restavfall and matavfall are found by reading the content of a span
+    # in a specific div
     for waste_type, waste_class in additional_waste_classes.items():
         div = soup.find("div", class_=waste_class)
         if div:
@@ -121,17 +122,15 @@ def parse_tomme_kalender(text):
                         neste_hentedager[waste_type] = get_next_weekdaydate(weekday).replace(hour=0, minute=0, second=0, microsecond=0)
                         break
         else:
-            print("Div not found")
+            _LOGGER.debug(f"Div with class {waste_class} for {waste_type} not found on avfallsor.no.")
 
-    tomme_days = {
-        "metal" : [neste_hentedager["Glass- og metallemballasje"]],
-        "paper" : [neste_hentedager["Papp og papir"]],
-        "rest" : [neste_hentedager["Restavfall"]],
-        "bio" : [neste_hentedager["Matavfall"]],
-        "plastic" : [neste_hentedager["Plastemballasje"]]
-    }
+    # Loop over the first 5 keys in gb_map
+    for waste_type in list(gb_map)[:5]:
+        # Get the date of next pick-up day if it exists
+        date = neste_hentedager[gb_map[waste_type]] if gb_map[waste_type] in neste_hentedager else None
+        tomme_days[waste_type] = [date]
 
-    _LOGGER.debug(tomme_days)
+    # _LOGGER.debug(tomme_days)
 
     return tomme_days
 
