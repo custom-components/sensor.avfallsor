@@ -10,6 +10,48 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 _LOGGER = logging.getLogger(__name__)
 
+# Map Norwegian weekday names to their corresponding indices
+weekday_map = {
+    "mandager": 0,  # Monday
+    "tirsdager": 1,  # Tuesday
+    "onsdager": 2,  # Wednesday
+    "torsdager": 3,  # Thursday
+    "fredager": 4,  # Friday
+    "lørdager": 5,  # Saturday
+    "søndager": 6,  # Sunday
+}
+
+gb_map = {
+    "mixed": "Restavfall",
+    "bio": "Matavfall",
+    "paper": "Papp og papir",
+    "plastic": "Plastemballasje",
+    "metal": "Glass- og metallemballasje",
+}
+gb_map.update({v: k for k, v in gb_map.items()})
+
+
+def get_next_weekdaydate(weekday_name):
+
+    # Convert the input string to a weekday index
+    weekday_index = weekday_map.get(weekday_name.lower())
+
+    if weekday_index is None:
+        raise ValueError(f"Invalid weekday name: {weekday_name}")
+
+    # Get today's date and weekday
+    today = datetime.today()
+    current_weekday = today.weekday()
+
+    # Calculate the number of days until the next desired weekday
+    days_ahead = (weekday_index - current_weekday + 7) % 7
+    # If the desired day is today, set to the next occurrence (7 days ahead)
+    days_ahead = 7 if days_ahead == 0 else days_ahead
+
+    # Calculate the next occurrence of the desired weekday
+    next_weekday_date = today + timedelta(days=days_ahead)
+    return next_weekday_date
+
 
 def check_settings(config, hass):
     if not any(config.get(i) for i in ["street_id"]):
@@ -39,76 +81,63 @@ def find_next_garbage_pickup(dates):
             return i
 
 
-gb_map = {
-    "rest": "Restavfall",
-    "bio": "Bioavfall",
-    "paper": "Papir/papp",
-    "plastic": "Papir/papp",
-    "metal": "Glass- og metallemballasje",
-}
-gb_map.update({v: k for k, v in gb_map.items()})
-
-
 def parse_tomme_kalender(text):
     tomme_days = defaultdict(list)
-    # _LOGGER.debug("Used using as soup:\n\n %s", text)
-    soup = BeautifulSoup(text, "html5lib")
-    today = date.today()
-    tomme_days["metal"] = []
-    tomme_days["paper"] = []
-    tomme_days["rest"] = []
-    tomme_days["bio"] = []
-    tomme_days["plastic"] = []
 
-    start_of_year = datetime(today.year, 1, 1)
-    end_of_year = datetime(today.year, 12, 31)
-    tommedag = None
+    soup = BeautifulSoup(text, "html.parser")
 
-    for c in soup.find_all("form"):
-        # Im pretty sure it must be a better way..
-        ips = list(c.findAll("input"))
-        if len(ips) < 4:
-            continue
+    forms = soup.find_all("form", class_="info-boxes-box-form")
 
-        avfall_type = [
-            i.attrs["value"]
-            for i in ips
-            if i and i.attrs.get("name", "") == "description"
-        ]
-        if avfall_type:
-            avfall_type = avfall_type[0]
+    # Create a dictionary to store the description and dtstart values
+    neste_hentedager = {}
 
-        dato = [
-            i.attrs["value"] for i in ips if i and i.attrs.get("name", "") == "dtstart"
-        ]
-        if dato:
-            dato = datetime.strptime(dato[0], "%Y-%m-%d")
+    # Metall, papp- og papir and plast dates are all found inside a form elements
+    for form in forms:
+        description_input = form.find("input", {"name": "description"})
+        dtstart_input = form.find("input", {"name": "dtstart"})
 
-        # This should probablybe dropped, we can handle this in the sensor anyway.
-        # if tommedag is None and avfall_type == "Restavfall":
-        #    tomme_day_nr = dato.weekday()
-        #    tomme_days["tomme_day"] = list(nor_days.values())[tomme_day_nr]
+        if description_input and dtstart_input:
+            description = description_input.get("value")
+            dtstart = dtstart_input.get("value")
+            neste_hentedager[description] = datetime.strptime(dtstart, "%Y-%m-%d")
 
-        # This is combined in the data, but its splitted in two
-        # sensors since it two "bins"
-        l_at = avfall_type.lower()
-        if "papir" in l_at or "plast" in l_at:
-            tomme_days["plastic"].append(dato)
-            tomme_days["paper"].append(dato)
+    additional_waste_classes = {
+        # These values are the class names of the divs on Avfallsors website
+        "Restavfall": "info-boxes-box info-boxes-box--9011",
+        "Matavfall": "info-boxes-box info-boxes-box--1111",
+    }
+
+    # Restavfall and matavfall are found by reading the content of a span
+    # in a specific div
+    for waste_type, waste_class in additional_waste_classes.items():
+        div = soup.find("div", class_=waste_class)
+        if div:
+            spans = div.find_all("span")  # Find all <span> elements within the div
+            for span in spans:
+                text = span.get_text()  # Get the text of each <span>
+                # Check if any weekday is in the text
+                for weekday in weekday_map:
+                    if weekday in text:
+                        neste_hentedager[waste_type] = get_next_weekdaydate(
+                            weekday
+                        ).replace(hour=0, minute=0, second=0, microsecond=0)
+                        break
         else:
-            tomme_days[gb_map[avfall_type]].append(dato)
+            _LOGGER.debug(
+                f"Div with class {waste_class} for {waste_type} not found on avfallsor.no."
+            )
 
-    # Skip calc for now as there are no exceptions yet.
-    # Let just see what the site looks like when after newyears.
-    # Maybe download the pdf and parse that if they limit the ammount
-    # of pickup days.
-    # for i in range(int((end_of_year - start_of_year).days) + 1):
-    #
-    #    i_date = start_of_year + timedelta(days=i)
-    #    if i_date.weekday() == tomme_day_nr:
-    #        tomme_days["bio"].append(i_date)
-    #        tomme_days["rest"].append(i_date)
-    #_LOGGER.debug("%s", pprint.pformat(tomme_days, indent=4))
+    # Loop over the first 5 keys in gb_map
+    for waste_type in list(gb_map)[:5]:
+        # Get the date of next pick-up day if it exists
+        date = (
+            neste_hentedager[gb_map[waste_type]]
+            if gb_map[waste_type] in neste_hentedager
+            else None
+        )
+        tomme_days[waste_type] = [date]
+
+    # _LOGGER.debug(tomme_days)
 
     return tomme_days
 
