@@ -10,9 +10,10 @@
                     "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "papir",
                     "bio": "matavfall",
-                    "mixed": "restavfall",
+                    "residual": "restavfall",
                     "metal": "metalavfall",
-                    "plastic": "plastikkavfall"
+                    "plastic": "plastikkavfall",
+                    "glass": "glass"
                 }
             },
             "edit": {
@@ -23,9 +24,10 @@
                     "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "papir",
                     "bio": "matavfall",
-                    "mixed": "restavfall",
+                    "residual": "restavfall",
                     "metal": "metalavfall",
-                    "plastic": "plastikkavfall"
+                    "plastic": "plastikkavfall",
+                    "glass": "glass"
                 }
             }
 
@@ -47,9 +49,10 @@
                     "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "papir",
                     "bio": "matavfall",
-                    "mixed": "restavfall",
+                    "residual": "restavfall",
                     "metal": "metalavfall",
-                    "plastic": "plastikkavfall"
+                    "plastic": "plastikkavfall",
+                    "glass": "glass"
                 }
             }
         },

@@ -10,9 +10,14 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
 
 from . import DOMAIN, garbage_types
-from .utils import (check_settings, find_id, find_id_from_lat_lon,
-                    find_next_garbage_pickup, get_tommeplan_page,
-                    parse_tomme_kalender)
+from .utils import (
+    check_settings,
+    find_id,
+    find_id_from_lat_lon,
+    find_next_garbage_pickup,
+    get_tommeplan_page,
+    parse_tomme_kalender,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +31,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(weeks=4)
+MIN_TIME_BETWEEN_UPDATES = timedelta(weeks=2)
 
 
 async def dry_setup(hass, config_entry, async_add_devices):
@@ -43,7 +48,7 @@ async def dry_setup(hass, config_entry, async_add_devices):
         async_get_clientsession(hass),
     )
 
-    await data.update()
+    # await data.update()
     sensors = []
     for gb_type in config.get("garbage_types"):
         sensor = AvfallSor(data, gb_type)
@@ -147,20 +152,24 @@ class AvfallSor(Entity):
     @property
     def next_garbage_pickup(self):
         """Get the date of the next picked for that garbage type."""
+        # 'metal', 'paper', 'glass', 'residual', 'bio', 'plastic'
         if self._garbage_type == "paper":
             return find_next_garbage_pickup(self.data._data.get("paper"))
 
         elif self._garbage_type == "bio":
             return find_next_garbage_pickup(self.data._data.get("bio"))
 
-        elif self._garbage_type == "mixed":
-            return find_next_garbage_pickup(self.data._data.get("rest"))
+        elif self._garbage_type == "residual":
+            return find_next_garbage_pickup(self.data._data.get("residual"))
 
         elif self._garbage_type == "metal":
             return find_next_garbage_pickup(self.data._data.get("metal"))
 
         elif self._garbage_type == "plastic":
             return find_next_garbage_pickup(self.data._data.get("plastic"))
+
+        elif self._garbage_type == "glass":
+            return find_next_garbage_pickup(self.data._data.get("glass"))
 
     @property
     def icon(self) -> str:
@@ -172,13 +181,16 @@ class AvfallSor(Entity):
         elif self._garbage_type == "bio":
             return "mdi:trash-can"
 
-        elif self._garbage_type == "mixed":
+        elif self._garbage_type == "residual":
             return "mdi:trash-can"
 
         elif self._garbage_type == "metal":
             return "mdi:trash-can"
 
         elif self._garbage_type == "plastic":
+            return "mdi:trash-can"
+
+        elif self._garbage_type == "glass":
             return "mdi:trash-can"
 
     @property
@@ -199,7 +211,7 @@ class AvfallSor(Entity):
             "next garbage pickup": self.next_garbage_pickup,
             ATTR_ATTRIBUTION: "avfallsør",
             "last update": self.data._last_update,
-            "garbage_type": self._garbage_type
+            "garbage_type": self._garbage_type,
         }
 
     @property
@@ -223,4 +235,4 @@ class AvfallSor(Entity):
 
     @property
     def friendly_name(self) -> str:
-        return self._friendly_name
+        return self._friendly_name  # type: ignore

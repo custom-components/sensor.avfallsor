@@ -1,15 +1,20 @@
 """Adds config flow for nordpool."""
+
 import logging
 from collections import OrderedDict
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from . import DOMAIN, garbage_types
-from .utils import (check_settings, check_tomme_kalender, find_id,
-                    find_id_from_lat_lon, get_tommeplan_page)
+from .utils import (
+    check_settings,
+    check_tomme_kalender,
+    find_id,
+    find_id_from_lat_lon,
+    get_tommeplan_page,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,12 +59,12 @@ def create_schema(entry, option=False):
 
 class Mixin:
     async def test_setup(self, user_input):
-        client = async_get_clientsession(self.hass)
+        client = async_get_clientsession(self.hass)  # type: ignore
 
         try:
-            check_settings(user_input, self.hass)
+            check_settings(user_input, self.hass)  # type: ignore
         except ValueError:
-            self._errors["base"] = "no_valid_settings"
+            self._errors["base"] = "no_valid_settings"  # type: ignore
             return False
 
         # This is what we really need.
@@ -75,18 +80,20 @@ class Mixin:
             if street_id_from_adr is not None:
                 street_id = street_id_from_adr
             else:
-                self._errors["base"] = "invalid address"
+                self._errors["base"] = "invalid address"  # type: ignore
 
         if street_id is None:
             try:
                 street_id_from_lat_lon = await find_id_from_lat_lon(
-                    self.hass.config.latitude, self.hass.config.longitude, client
+                    self.hass.config.latitude,
+                    self.hass.config.longitude,
+                    client,  # type: ignore
                 )
 
                 if street_id_from_lat_lon is not None:
                     street_id = street_id_from_lat_lon
             except ValueError:
-                self._errors["base"] = "wrong_lat_lon"
+                self._errors["base"] = "wrong_lat_lon"  # type: ignore
 
         if street_id is not None:
             # We need to parse this as the site returns a generic site without
@@ -95,11 +102,11 @@ class Mixin:
             if check_tomme_kalender(text) is True:
                 return True
             else:
-                self._errors["base"] = "invalid_street_id"
+                self._errors["base"] = "invalid_street_id"  # type: ignore
                 return False
 
         else:
-            self._errors["base"] = "nothing_worked"
+            self._errors["base"] = "nothing_worked"  # type: ignore
             return False
 
 
@@ -113,9 +120,7 @@ class AvfallSorFlowHandler(Mixin, config_entries.ConfigFlow, domain=DOMAIN):
         """Initialize."""
         self._errors = {}
 
-    async def async_step_user(
-        self, user_input=None
-    ):  # pylint: disable=dangerous-default-value
+    async def async_step_user(self, user_input=None):  # pylint: disable=dangerous-default-value
         """Handle a flow initialized by the user."""
 
         if user_input is not None:
@@ -165,7 +170,6 @@ class AvfallsorOptionsHandler(config_entries.OptionsFlow, Mixin):
         self._errors = {}
 
     async def async_step_init(self, user_input=None):
-
         return self.async_show_form(
             step_id="edit",
             data_schema=vol.Schema(create_schema(self.config_entry, option=True)),
