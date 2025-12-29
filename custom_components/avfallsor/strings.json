@@ -10,9 +10,10 @@
                     "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
-                    "mixed": "mixed",
+                    "residual": "residual",
                     "metal": "metal",
-                    "plastic": "plastic"
+                    "plastic": "plastic",
+                    "glass": "glass"
                 }
             },
             "edit": {
@@ -23,9 +24,10 @@
                     "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
-                    "mixed": "mixed",
+                    "residual": "residual",
                     "metal": "metal",
-                    "plastic": "plastic"
+                    "plastic": "plastic",
+                    "glass": "glass"
                 }
             }
 
@@ -47,9 +49,10 @@
                     "street_id": "Finn id på https://avfallsor.no/henting-av-avfall/finn-hentedag/",
                     "paper": "paper",
                     "bio": "bio",
-                    "mixed": "mixed",
+                    "residual": "residual",
                     "metal": "metal",
-                    "plastic": "plastic"
+                    "plastic": "plastic",
+                    "glass": "glass"
                 }
             }
         },
