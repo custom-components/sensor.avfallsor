@@ -33,7 +33,7 @@ async def async_setup(hass, config):
 
     try:
         await hass.config_entries.async_forward_entry(config, "sensor")
-        _LOGGER.info("Successfully added sensor from the avfallsor integration")
+        _LOGGER.debug("Successfully added sensor from the avfallsor integration")
     except ValueError:
         pass
 
@@ -56,6 +56,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 async def async_remove_entry(hass, config_entry):
     try:
         await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
-        _LOGGER.info("Successfully removed sensor from the avfallsor integration")
+        _LOGGER.debug("Successfully removed sensor from the avfallsor integration")
     except ValueError:
         pass

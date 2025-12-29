@@ -78,7 +78,7 @@ def parse_date(date_str: str, year=None):
         month = d.get("month")
 
         res = datetime(year=year, month=months_no.get(month), day=day)
-        _LOGGER.info("parse_date %r", res)
+        _LOGGER.debug("parse_date %r", res)
         return res
 
 
@@ -155,7 +155,7 @@ async def verify_that_we_can_find_id(config, hass):
 
 async def find_id(address, client):
     """Find the id that avfall sør uses to create the tømmeplan"""
-    _LOGGER.info("Called find_id %r", address)
+    _LOGGER.debugs("Called find_id %r", address)
     if not address:
         return
 
@@ -179,7 +179,7 @@ async def find_id(address, client):
         _LOGGER.debug("Raw response:\n\n %s", json.dumps(data, indent=4))
         # Api returns a empty list if we dont get a hit.
         if isinstance(data, list):
-            _LOGGER.info("Didn't find address using %s", address)
+            _LOGGER.warning("Didn't find address using %s", address)
             return None
 
         if len(data) > 1:

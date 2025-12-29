@@ -73,10 +73,10 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
 
 async def async_remove_entry(hass, config_entry):
-    _LOGGER.info("async_remove_entry avfallsor")
+    _LOGGER.debug("async_remove_entry avfallsor")
     try:
         await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
-        _LOGGER.info("Successfully removed sensor from the avfallsor integration")
+        _LOGGER.debug("Successfully removed sensor from the avfallsor integration")
     except ValueError:
         pass
 
