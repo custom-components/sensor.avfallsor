@@ -104,6 +104,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# HA config
+config/
+
 # Spyder project settings
 .spyderproject
 .spyproject

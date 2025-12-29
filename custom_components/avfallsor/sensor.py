@@ -193,6 +193,8 @@ class AvfallSor(Entity):
         elif self._garbage_type == "glass":
             return "mdi:trash-can"
 
+        return ""
+
     @property
     def unique_id(self) -> str:
         """Return the name of the sensor."""
